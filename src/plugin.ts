@@ -1,0 +1,1 @@
+export { expandAbbreviation } from './commands/expand';
