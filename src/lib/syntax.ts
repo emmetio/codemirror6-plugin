@@ -1,5 +1,4 @@
-import type { SyntaxType, CSSAbbreviationScope, AbbreviationContext } from 'emmet';
-import type { TokenType } from '@emmetio/css-matcher';
+import type { SyntaxType, AbbreviationContext } from 'emmet';
 import { attributes } from '@emmetio/html-matcher';
 import { getHTMLContext, getCSSContext } from '@emmetio/action-utils';
 import type { CSSContext, HTMLContext } from '@emmetio/action-utils';
@@ -32,6 +31,24 @@ export interface StylesheetRegion {
 
 export interface SyntaxCache {
     stylesheetRegions?: StylesheetRegion[];
+}
+
+const enum TokenType {
+    Selector = "selector",
+    PropertyName = "propertyName",
+    PropertyValue = "propertyValue",
+    BlockEnd = "blockEnd"
+}
+
+const enum CSSAbbreviationScope {
+    /** Include all possible snippets in match */
+    Global = "@@global",
+    /** Include raw snippets only (e.g. no properties) in abbreviation match */
+    Section = "@@section",
+    /** Include properties only in abbreviation match */
+    Property = "@@property",
+    /** Resolve abbreviation in context of CSS property value */
+    Value = "@@value"
 }
 
 /**

@@ -28,7 +28,7 @@ let view = new EditorView({
     state: EditorState.create({
         doc: text,
         extensions: [basicSetup, html(), keymap.of([{
-            key: 'Ctrl-e',
+            key: 'Cmd-e',
             run: expandAbbreviation
         }])]
     }),

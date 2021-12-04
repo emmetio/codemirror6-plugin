@@ -1,9 +1,10 @@
-import type { TextRange } from '@emmetio/action-utils';
+import { TextRange } from '@emmetio/action-utils';
 import expand, { extract } from 'emmet';
 import type { StateCommand, EditorState } from '@codemirror/state';
-import { language } from '@codemirror/language';
-import { htmlLanguage } from '@codemirror/lang-html';
+import { language, syntaxTree } from '@codemirror/language';
 import { cssLanguage } from '@codemirror/lang-css';
+import { htmlLanguage } from '@codemirror/lang-html';
+import { getCSSContext } from '../lib/css';
 
 /** Characters to indicate tab stop start and end in generated snippet */
 export const tabStopStart = String.fromCodePoint(0xFFF0);
@@ -14,13 +15,13 @@ export const expandAbbreviation: StateCommand = ({ state, dispatch }) => {
     const line = state.doc.lineAt(sel.anchor);
     const abbr = extract(line.text, sel.anchor - line.from, { lookAhead: true });
 
-    getLang(state);
+    getLang(state, sel.anchor);
+    return true;
 
     console.log('extract abbr', {
         line: line.text,
         pos: sel.anchor - line.from,
         result: abbr,
-        lang: state.languageDataAt('html', sel.anchor)
     });
 
     if (abbr) {
@@ -99,7 +100,15 @@ function getSelectionsFromSnippet(snippet: string, base = 0): { ranges: TextRang
 }
 
 
-function getLang(state: EditorState) {
+function getLang(state: EditorState, pos: number) {
+    const tree = syntaxTree(state).resolve(pos);
+    if (cssLanguage.isActiveAt(state, pos)) {
+        console.log('in css');
+        getCSSContext(state, pos);
+        return;
+    }
+    console.log('tree', tree);
+
     const topLang = state.facet(language);
     console.log('top lang', topLang);
 
@@ -111,3 +120,4 @@ function getLang(state: EditorState) {
         }
     }
 }
+
