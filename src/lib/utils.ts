@@ -266,7 +266,7 @@ export function last<T>(arr: T[]): T | undefined {
 /**
  * Finds and collects selections ranges from given snippet
  */
-function getSelectionsFromSnippet(snippet: string, base = 0): { ranges: TextRange[], snippet: string } {
+export function getSelectionsFromSnippet(snippet: string, base = 0): { ranges: TextRange[], snippet: string } {
     // Find and collect selection ranges from snippet
     const ranges: TextRange[] = [];
     let result = '';
@@ -289,6 +289,10 @@ function getSelectionsFromSnippet(snippet: string, base = 0): { ranges: TextRang
                 sel = null;
             }
         }
+    }
+
+    if (!ranges.length) {
+        ranges.push([snippet.length + base, snippet.length + base]);
     }
 
     return {

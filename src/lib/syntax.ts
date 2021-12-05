@@ -64,12 +64,14 @@ const enum CSSAbbreviationScope {
 export function syntaxInfo(state: EditorState, ctx?: number | HTMLContext | CSSContext): SyntaxInfo {
     let syntax = docSyntax(state);
     let inline: boolean | undefined;
-
     let context = typeof ctx === 'number' ? getContext(state, ctx) : ctx;
+
     if (context?.type === 'html' && context.css) {
         inline = true;
         syntax = 'css';
         context = context.css;
+    } else if (context?.type === 'css') {
+        syntax = 'css';
     }
 
     return {
