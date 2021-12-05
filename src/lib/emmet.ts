@@ -1,13 +1,16 @@
+import type { EditorState } from '@codemirror/state';
+import { syntaxTree } from '@codemirror/language';
+import type { SyntaxNode } from '@lezer/common';
 import expandAbbreviation, { extract as extractAbbreviation, resolveConfig } from 'emmet';
 import type { UserConfig, AbbreviationContext, ExtractedAbbreviation, Options, ExtractOptions, MarkupAbbreviation, StylesheetAbbreviation, SyntaxType } from 'emmet';
-import match, { balancedInward, balancedOutward } from '@emmetio/html-matcher';
+import { balancedInward, balancedOutward } from '@emmetio/html-matcher';
 import { balancedInward as cssBalancedInward, balancedOutward as cssBalancedOutward } from '@emmetio/css-matcher';
 import { selectItemCSS, selectItemHTML } from '@emmetio/action-utils';
 import type { TextRange } from '@emmetio/action-utils';
 import evaluate, { extract as extractMath } from '@emmetio/math-expression';
 import type { ExtractOptions as MathExtractOptions } from '@emmetio/math-expression';
-import { isXML, syntaxInfo, getMarkupAbbreviationContext, getStylesheetAbbreviationContext } from './syntax';
-import { getContent, isQuotedString } from './utils';
+import { syntaxInfo, getMarkupAbbreviationContext, getStylesheetAbbreviationContext } from './syntax';
+import { getTagAttributes, nodeRange, substr } from './utils';
 import getEmmetConfig from './config';
 import getOutputOptions, { field } from './output';
 
@@ -43,7 +46,6 @@ export function expand(abbr: string | MarkupAbbreviation | StylesheetAbbreviatio
     let opt: UserConfig = { cache };
     const outputOpt: Partial<Options> = {
         'output.field': field(),
-        'output.format': !config || !config['inline'],
     };
 
     if (config) {
@@ -134,59 +136,64 @@ export function evaluateMath(code: string, pos: number, options?: Partial<MathEx
 /**
  * Returns matched HTML/XML tag for given point in view
  */
-export function getTagContext(editor: CodeMirror.Editor, pos: number, xml?: boolean): ContextTag | undefined {
-    const content = getContent(editor);
-    let ctx: ContextTag | undefined;
-
-    if (xml == null) {
-        // Autodetect XML dialect
-        const mode = editor.getMode();
-        xml = mode ? isXML(mode.name) : false;
+export function getTagContext(state: EditorState, pos: number): ContextTag | undefined {
+    let element: SyntaxNode | null = syntaxTree(state).resolve(pos, 1);
+    while (element && element.name !== 'Element') {
+        element = element.parent;
     }
 
-    const matchedTag = match(content, pos, { xml });
-    if (matchedTag) {
-        const { open, close } = matchedTag;
-        ctx = {
-            name: matchedTag.name,
-            open,
-            close
-        };
+    if (element) {
+        const selfClose = element.getChild('SelfClosingTag');
+        if (selfClose) {
+            return {
+                name: getTagName(state, selfClose),
+                attributes: getTagAttributes(state, selfClose),
+                open: nodeRange(selfClose)
+            }
+        }
 
-        if (matchedTag.attributes) {
-            ctx.attributes = {};
-            matchedTag.attributes.forEach(attr => {
-                let value = attr.value;
-                if (value && isQuotedString(value)) {
-                    value = value.slice(1, -1);
-                }
+        const openTag = element.getChild('OpenTag');
+        if (openTag) {
+            const closeTag = element.getChild('CloseTag');
+            const ctx: ContextTag = {
+                name: getTagName(state, openTag),
+                attributes: getTagAttributes(state, openTag),
+                open: nodeRange(openTag),
+            };
 
-                ctx!.attributes![attr.name] = value == null ? null : value;
-            });
+            if (closeTag) {
+                ctx.close = nodeRange(closeTag);
+            }
+
+            return ctx;
         }
     }
 
-    return ctx;
+    return;
+}
+
+function getTagName(state: EditorState, node: SyntaxNode): string {
+    const tagName = node.getChild('TagName');
+    return tagName ? substr(state, tagName) : '';
 }
 
 /**
  * Returns Emmet options for given character location in editor
  */
-export function getOptions(editor: CodeMirror.Editor, pos: number): UserConfig {
-    const info = syntaxInfo(editor, pos);
+export function getOptions(state: EditorState, pos: number): UserConfig {
+    const info = syntaxInfo(state, pos);
     const { context } = info;
 
     const config: UserConfig = {
         type: info.type,
         syntax: info.syntax || 'html',
-        options: getOutputOptions(editor, pos, info.inline)
+        options: getOutputOptions(state, pos, info.inline)
     };
 
     if (context) {
-        const content = getContent(editor);
         // Set context from syntax info
         if (context.type === 'html' && context.ancestors.length) {
-            config.context = getMarkupAbbreviationContext(content, context);
+            config.context = getMarkupAbbreviationContext(state, context);
         } else if (context.type === 'css') {
             config.context = getStylesheetAbbreviationContext(context);
         }

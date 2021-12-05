@@ -1,19 +1,21 @@
 import { Options } from 'emmet';
+import type { EditorState } from '@codemirror/state';
+import type { Line } from '@codemirror/text';
 import getEmmetConfig from './config';
 import { tabStopStart, tabStopEnd } from './utils';
 import { isHTML, docSyntax } from './syntax';
 
-export default function getOutputOptions(editor: CodeMirror.Editor, pos?: number, inline?: boolean): Partial<Options> {
-    const posObj: CodeMirror.Position = pos != null ? editor.posFromIndex(pos) : editor.getCursor();
-    const syntax = docSyntax(editor) || 'html';
-    const config = getEmmetConfig(editor);
+export default function getOutputOptions(state: EditorState, pos: number, inline?: boolean): Partial<Options> {
+    const syntax = docSyntax(state) || 'html';
+    const config = getEmmetConfig();
 
     const opt: Partial<Options> = {
-        'output.baseIndent': lineIndent(editor, posObj.line),
-        'output.indent': getIndentation(editor),
+        'output.baseIndent': lineIndent(state.doc.lineAt(pos)),
+        'output.indent': getIndentation(state),
         'output.field': field(),
         'output.format': !inline,
-        'output.attributeQuotes': config.attributeQuotes
+        'output.attributeQuotes': config.attributeQuotes,
+        'stylesheet.shortHex': config.shortHex
     };
 
     if (syntax === 'html') {
@@ -30,7 +32,6 @@ export default function getOutputOptions(editor: CodeMirror.Editor, pos?: number
         }
 
         opt['bem.enabled'] = config.bem;
-        opt['stylesheet.shortHex'] = config.shortHex;
     }
 
     return opt;
@@ -56,19 +57,15 @@ export function field() {
 /**
  * Returns indentation of given line
  */
-export function lineIndent(editor: CodeMirror.Editor, line: number): string {
-    const lineStr = editor.getLine(line);
-    const indent = lineStr.match(/^\s+/);
+export function lineIndent(line: Line): string {
+    const indent = line.text.match(/^\s+/);
     return indent ? indent[0] : '';
 }
 
 /**
  * Returns token used for single indentation in given editor
  */
-export function getIndentation(editor: CodeMirror.Editor): string {
-    if (!editor.getOption('indentWithTabs')) {
-        return ' '.repeat(editor.getOption('indentUnit') || 0);
-    }
-
-    return '\t';
+export function getIndentation(state: EditorState): string {
+    const { tabSize } = state;
+    return tabSize ? ' '.repeat(tabSize) : '\t';
 }

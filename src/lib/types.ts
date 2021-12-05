@@ -29,3 +29,31 @@ export interface CSSContext<M = CSSMatch> {
      */
     embedded?: TextRange;
 }
+
+export type HTMLType = 'open' | 'close' | 'selfClose';
+
+export interface HTMLContext {
+    type: 'html',
+    /** List of ancestor elements for current context */
+    ancestors: HTMLAncestor[];
+    /** Tag match directly under given position */
+    current: HTMLMatch | null;
+    /** CSS context, if any */
+    css?: CSSContext;
+}
+
+export interface HTMLAncestor {
+    /** Element name */
+    name: string;
+    /** Range of element’s open tag in source code */
+    range: TextRange;
+}
+
+export interface HTMLMatch {
+    /** Element name */
+    name: string;
+    /** Element type */
+    type: HTMLType;
+    /** Range of matched element in source code */
+    range: TextRange;
+}

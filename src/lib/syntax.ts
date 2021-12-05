@@ -1,13 +1,14 @@
 import type { SyntaxType, AbbreviationContext } from 'emmet';
 import { attributes } from '@emmetio/html-matcher';
-import { getHTMLContext, getCSSContext } from '@emmetio/action-utils';
-import type { CSSContext, HTMLContext } from '@emmetio/action-utils';
 import type { EditorState } from '@codemirror/state';
-import { language } from '@codemirror/language';
+import { language, syntaxTree } from '@codemirror/language';
 import { cssLanguage } from '@codemirror/lang-css';
 import { htmlLanguage } from '@codemirror/lang-html';
+import type { SyntaxNode } from '@lezer/common';
+import { getContext } from './context';
+import type { HTMLContext, CSSContext } from './types';
 import type { EnableForSyntax } from './config';
-import { getContent, last, attributeValue } from './utils';
+import { last, attributeValue, getTagAttributes } from './utils';
 
 const xmlSyntaxes = ['xml', 'xsl', 'jsx'];
 const htmlSyntaxes = ['html', 'htmlmixed', 'vue'];
@@ -60,25 +61,15 @@ const enum CSSAbbreviationScope {
  * returns `null`, but if `fallback` argument is provided, it returns data for
  * given fallback syntax
  */
-export function syntaxInfo(editor: CodeMirror.Editor, pos: number): SyntaxInfo {
-    let syntax = docSyntax(editor);
+export function syntaxInfo(state: EditorState, ctx?: number | HTMLContext | CSSContext): SyntaxInfo {
+    let syntax = docSyntax(state);
     let inline: boolean | undefined;
-    let context: HTMLContext | CSSContext | undefined;
 
-    if (isHTML(syntax)) {
-        const content = getContent(editor);
-        context = getHTMLContext(content, pos, {
-            xml: isXML(syntax)
-        });
-
-        if (context.css) {
-            // `pos` is in embedded CSS
-            syntax = getEmbeddedStyleSyntax(content, context) || 'css';
-            inline = context.css.inline;
-            context = context.css;
-        }
-    } else if (isCSS(syntax)) {
-        context = getCSSContext(getContent(editor), pos);
+    let context = typeof ctx === 'number' ? getContext(state, ctx) : ctx;
+    if (context?.type === 'html' && context.css) {
+        inline = true;
+        syntax = 'css';
+        context = context.css;
     }
 
     return {
@@ -87,19 +78,6 @@ export function syntaxInfo(editor: CodeMirror.Editor, pos: number): SyntaxInfo {
         inline,
         context
     };
-}
-
-/**
- * Returns syntax for given position in editor
- */
-export function syntaxFromPos(editor: CodeMirror.Editor, pos: number): string | undefined {
-    const p = editor.posFromIndex(pos);
-    const mode = editor.getModeAt(p);
-    if (mode && mode.name === 'xml') {
-        // XML mode is used for styling HTML as well
-        return mode.configuration || mode.name;
-    }
-    return mode && mode.name;
 }
 
 /**
@@ -187,7 +165,7 @@ export function enabledForSyntax(opt: EnableForSyntax, info: SyntaxInfo) {
 /**
  * Returns embedded stylesheet syntax from given HTML context
  */
-export function getEmbeddedStyleSyntax(code: string, ctx: HTMLContext): string | undefined {
+export function getEmbeddedStyleSyntax(code: string, ctx: HTMLContext): string | void {
     const parent = last(ctx.ancestors);
     if (parent && parent.name === 'style') {
         for (const attr of attributes(code.slice(parent.range[0], parent.range[1]), parent.name)) {
@@ -201,19 +179,21 @@ export function getEmbeddedStyleSyntax(code: string, ctx: HTMLContext): string |
 /**
  * Returns context for Emmet abbreviation from given HTML context
  */
-export function getMarkupAbbreviationContext(code: string, ctx: HTMLContext): AbbreviationContext | undefined {
+export function getMarkupAbbreviationContext(state: EditorState, ctx: HTMLContext): AbbreviationContext | undefined {
     const parent = last(ctx.ancestors);
     if (parent) {
-        const attrs: { [name: string]: string } = {};
-        for (const attr of attributes(code.slice(parent.range[0], parent.range[1]), parent.name)) {
-            attrs[attr.name] = attributeValue(attr) || '';
+        let node: SyntaxNode | null = syntaxTree(state).resolve(parent.range[0], 1);
+        while (node && node.name !== 'OpenTag') {
+            node = node.parent;
         }
 
         return {
             name: parent.name,
-            attributes: attrs
+            attributes: node ? getTagAttributes(state, node) : {}
         };
     }
+
+    return;
 }
 
 /**

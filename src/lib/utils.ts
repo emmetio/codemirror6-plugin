@@ -1,5 +1,7 @@
 import { AttributeToken } from '@emmetio/html-matcher';
 import { CSSProperty, TextRange } from '@emmetio/action-utils';
+import { EditorState } from '@codemirror/state';
+import type { SyntaxNode } from '@lezer/common';
 
 /** Characters to indicate tab stop start and end in generated snippet */
 export const tabStopStart = String.fromCodePoint(0xFFF0);
@@ -11,10 +13,6 @@ export interface AbbrError {
     pos: number
 }
 
-export interface CMRange {
-    anchor: CodeMirror.Position;
-    head: CodeMirror.Position;
-}
 
 export type DisposeFn = () => void;
 
@@ -24,7 +22,7 @@ export interface EmmetState {
     tagMatch?: DisposeFn | null;
 }
 
-export const pairs = {
+export const pairs: Record<string, string> = {
     '{': '}',
     '[': ']',
     '(': ')'
@@ -35,13 +33,11 @@ for (const key of Object.keys(pairs)) {
     pairsEnd.push(pairs[key]);
 }
 
-let idCounter = 0;
-
 /**
  * Returns copy of region which starts and ends at non-space character
  */
-export function narrowToNonSpace(editor: CodeMirror.Editor, range: TextRange): TextRange {
-    const text = substr(editor, range);
+export function narrowToNonSpace(state: EditorState, range: TextRange): TextRange {
+    const text = substr(state, range);
     let startOffset = 0;
     let endOffset = text.length;
 
@@ -57,58 +53,44 @@ export function narrowToNonSpace(editor: CodeMirror.Editor, range: TextRange): T
 }
 
 /**
- * Replaces given range in editor with snippet contents
- */
-export function replaceWithSnippet(editor: CodeMirror.Editor, range: TextRange, snippet: string): boolean {
-    return editor.operation(() => {
-        const snippetPayload = getSelectionsFromSnippet(snippet, range[0]);
-        const [from, to] = toRange(editor, range);
-        editor.replaceRange(snippetPayload.snippet, from, to);
-
-        // Position cursor
-        if (snippetPayload.ranges.length) {
-            const selections = snippetPayload.ranges.map(r => {
-                const [head, anchor] = toRange(editor, r);
-                return {  head, anchor } as CodeMirror.Range;
-            });
-            editor.setSelections(selections);
-        }
-
-        return true;
-    });
-}
-
-/**
  * Returns current caret position for single selection
  */
-export function getCaret(editor: CodeMirror.Editor): number {
-    const pos = editor.getCursor();
-    return editor.indexFromPos(pos);
+export function getCaret(state: EditorState): number {
+    const sel = state.selection.main;
+    return Math.max(sel.anchor, sel.head);
 }
 
 /**
- * Returns full text content of given editor
+ * Returns contents of given range or node
  */
-export function getContent(editor: CodeMirror.Editor): string {
-    return editor.getValue();
+export function substr(state: EditorState, range: TextRange | SyntaxNode): string {
+    let from: number;
+    let to: number;
+    if (Array.isArray(range)) {
+        [from, to] = range;
+    } else {
+        from = range.from;
+        to = range.to;
+    }
+    return state.doc.sliceString(from, to);
 }
 
 /**
- * Returns substring of given editor content for specified range
+ * Check if given range or syntax name contains given position
  */
-export function substr(editor: CodeMirror.Editor, range: TextRange): string {
-    const [from, to] = toRange(editor, range);
-    return editor.getRange(from, to);
+export function contains(range: TextRange | SyntaxNode, pos: number): boolean {
+    if (Array.isArray(range)) {
+        return pos >= range[0] && pos <= range[1];
+    }
+
+    return pos >= range.from && pos <= range.to;
 }
 
 /**
- * Converts given index range to editor’s position range
+ * Converts node range to text range
  */
-export function toRange(editor: CodeMirror.Editor, range: TextRange): [CodeMirror.Position, CodeMirror.Position] {
-    return [
-        editor.posFromIndex(range[0]),
-        editor.posFromIndex(range[1])
-    ];
+export function nodeRange(node: SyntaxNode): TextRange {
+    return [node.from, node.to];
 }
 
 /**
@@ -153,14 +135,14 @@ export function patchAttribute(attr: AttributeToken, value: string | number, nam
 /**
  * Returns patched version of given CSS property, parsed by Emmet CSS matcher
  */
-export function patchProperty(editor: CodeMirror.Editor, prop: CSSProperty, value: string, name?: string) {
+export function patchProperty(state: EditorState, prop: CSSProperty, value: string, name?: string) {
     if (name == null) {
-        name = substr(editor, prop.name);
+        name = substr(state, prop.name);
     }
 
-    const before = substr(editor, [prop.before, prop.name[0]]);
-    const between = substr(editor, [prop.name[1], prop.value[0]]);
-    const after = substr(editor, [prop.value[1], prop.after]);
+    const before = substr(state, [prop.before, prop.name[0]]);
+    const between = substr(state, [prop.name[1], prop.value[0]]);
+    const after = substr(state, [prop.value[1], prop.after]);
 
     return [before, name, between, value, after].join('');
 }
@@ -174,6 +156,40 @@ export function isQuoted(value: string | undefined): boolean {
 
 export function isQuote(ch: string | undefined) {
     return ch === '"' || ch === "'";
+}
+
+/**
+ * Returns own (unquoted) attribute value range
+ */
+export function getAttributeValueRange(state: EditorState, node: SyntaxNode): TextRange {
+    const range = nodeRange(node);
+    const value = substr(state, range);
+    if (isQuote(value[0])) {
+        range[0]++;
+    }
+
+    if (isQuote(value[value.length - 1])) {
+        range[1]--;
+    }
+
+    return range;
+}
+
+/**
+ * Returns given HTML element’s attributes as map
+ */
+export function getTagAttributes(state: EditorState, node: SyntaxNode): Record<string, string | null> {
+    const result: Record<string, string | null> = {};
+    for (const attr of node.getChildren('Attribute')) {
+        const attrNameNode = attr.getChild('AttributeName');
+        if (attrNameNode) {
+            const attrName = substr(state, attrNameNode);
+            const attrValueNode = attr.getChild('AttributeValue');
+            result[attrName] = attrValueNode ? substr(state, getAttributeValueRange(state, attrValueNode)) : null;
+        }
+    }
+
+    return result;
 }
 
 /**
@@ -195,31 +211,12 @@ export function isSpace(ch: string): boolean {
 }
 
 export function htmlEscape(str: string): string {
-    const replaceMap = {
+    const replaceMap: Record<string, string> = {
         '<': '&lt;',
         '>': '&gt;',
         '&': '&amp;',
     };
     return str.replace(/[<>&]/g, ch => replaceMap[ch]);
-}
-
-/**
- * Returns special object for bypassing command handling
- */
-export function pass(editor: CodeMirror.Editor) {
-    return editor.constructor['Pass'];
-}
-
-/**
- * Converts given CodeMirror range to text range
- */
-export function textRange(editor: CodeMirror.Editor, range: CMRange): TextRange {
-    const head = editor.indexFromPos(range.head);
-    const anchor = editor.indexFromPos(range.anchor);
-    return [
-        Math.min(head, anchor),
-        Math.max(head, anchor)
-    ];
 }
 
 /**
@@ -264,24 +261,6 @@ export function errorSnippet(err: AbbrError, baseClass = 'emmet-error-snippet'):
  */
 export function last<T>(arr: T[]): T | undefined {
     return arr.length > 0 ? arr[arr.length - 1] : undefined;
-}
-
-/**
- * Check if given editor instance has internal Emmet state
- */
-export function hasInternalState(editor: CodeMirror.Editor): boolean {
-    return stateKey in editor;
-}
-
-/**
- * Returns internal Emmet state for given editor instance
- */
-export function getInternalState(editor: CodeMirror.Editor): EmmetState {
-    if (!hasInternalState(editor)) {
-        editor[stateKey] = { id: String(idCounter++) } as EmmetState;
-    }
-
-    return editor[stateKey];
 }
 
 /**
