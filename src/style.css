@@ -1,1 +1,10 @@
-
+.emmet-preview {
+    position: absolute;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    background: #fff;
+    display: inline-block;
+    margin-left: -5px;
+    margin-top: 1.6em;
+    font-size: 0.8em;
+}

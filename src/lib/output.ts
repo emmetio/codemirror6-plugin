@@ -1,4 +1,4 @@
-import { Options } from 'emmet';
+import type { Options } from 'emmet';
 import type { EditorState } from '@codemirror/state';
 import type { Line } from '@codemirror/text';
 import getEmmetConfig from './config';

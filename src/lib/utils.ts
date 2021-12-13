@@ -1,6 +1,6 @@
-import { AttributeToken } from '@emmetio/html-matcher';
-import { CSSProperty, TextRange } from '@emmetio/action-utils';
-import { EditorState } from '@codemirror/state';
+import type { AttributeToken } from '@emmetio/html-matcher';
+import type { CSSProperty, TextRange } from '@emmetio/action-utils';
+import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 
 /** Characters to indicate tab stop start and end in generated snippet */
@@ -8,11 +8,15 @@ export const tabStopStart = String.fromCodePoint(0xFFF0);
 export const tabStopEnd = String.fromCodePoint(0xFFF1);
 export const stateKey = '$$emmet';
 
+interface RangeObject {
+    from: number;
+    to: number;
+}
+
 export interface AbbrError {
     message: string,
     pos: number
 }
-
 
 export type DisposeFn = () => void;
 
@@ -63,7 +67,7 @@ export function getCaret(state: EditorState): number {
 /**
  * Returns contents of given range or node
  */
-export function substr(state: EditorState, range: TextRange | SyntaxNode): string {
+export function substr(state: EditorState, range: TextRange | RangeObject): string {
     let from: number;
     let to: number;
     if (Array.isArray(range)) {
@@ -78,7 +82,7 @@ export function substr(state: EditorState, range: TextRange | SyntaxNode): strin
 /**
  * Check if given range or syntax name contains given position
  */
-export function contains(range: TextRange | SyntaxNode, pos: number): boolean {
+export function contains(range: TextRange | RangeObject, pos: number): boolean {
     if (Array.isArray(range)) {
         return pos >= range[0] && pos <= range[1];
     }
@@ -89,7 +93,7 @@ export function contains(range: TextRange | SyntaxNode, pos: number): boolean {
 /**
  * Converts node range to text range
  */
-export function nodeRange(node: SyntaxNode): TextRange {
+export function nodeRange(node: RangeObject): TextRange {
     return [node.from, node.to];
 }
 
@@ -161,7 +165,7 @@ export function isQuote(ch: string | undefined) {
 /**
  * Returns own (unquoted) attribute value range
  */
-export function getAttributeValueRange(state: EditorState, node: SyntaxNode): TextRange {
+export function getAttributeValueRange(state: EditorState, node: RangeObject): TextRange {
     const range = nodeRange(node);
     const value = substr(state, range);
     if (isQuote(value[0])) {

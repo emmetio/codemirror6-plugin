@@ -1,9 +1,10 @@
 import './style.css'
 
-import { EditorState, EditorView, basicSetup } from "@codemirror/basic-setup";
-import { html } from "@codemirror/lang-html";
-import { keymap } from "@codemirror/view";
+import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
+import { html } from '@codemirror/lang-html';
+import { keymap } from '@codemirror/view';
 import { expandAbbreviation } from './plugin';
+import createTracker from './tracker';
 
 const text = `<html style="color: green">
   <!-- this is a comment -->
@@ -27,13 +28,25 @@ const text = `<html style="color: green">
   </body>
 </html>`;
 
+const underlineTheme = EditorView.baseTheme({
+    '.cm-underline': {
+        textDecoration: 'underline 1px green',
+    }
+});
+
 let view = new EditorView({
     state: EditorState.create({
         doc: text,
-        extensions: [basicSetup, html(), keymap.of([{
-            key: 'Cmd-e',
-            run: expandAbbreviation
-        }])]
+        extensions: [
+            basicSetup,
+            html(),
+            createTracker(),
+            underlineTheme,
+            keymap.of([{
+                key: 'Cmd-e',
+                run: expandAbbreviation
+            }]),
+        ]
     }),
     parent: document.querySelector<HTMLDivElement>('#app')!
 });

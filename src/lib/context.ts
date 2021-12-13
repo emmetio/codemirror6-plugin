@@ -5,7 +5,7 @@ import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import type { TextRange } from '@emmetio/action-utils';
 import type { CSSContext, CSSMatch, HTMLAncestor, HTMLContext, HTMLType } from './types';
-import { contains, getAttributeValueRange, nodeRange, substr } from './utils';
+import { contains, getAttributeValueRange, last, nodeRange, substr } from './utils';
 
 interface InlineProp {
     name: TextRange;
@@ -50,6 +50,8 @@ export function getCSSContext(state: EditorState, pos: number, embedded?: TextRa
     const stack: CSSMatch[] = [];
 
     for (let node: SyntaxNode | null = tree; node; node = node.parent) {
+        console.log('css walk', node.name);
+
         if (node.name === 'RuleSet') {
             const sel = getSelectorRange(node);
             stack.push({
@@ -161,13 +163,19 @@ function detectCSSContextFromHTML(state: EditorState, pos: number, ctx: HTMLCont
             }
         }
     }
+
+    const closestTag = last(ctx.ancestors);
+    if (closestTag?.name === 'style') {
+        // Inside <style> element
+        console.log('inside style', getCSSContext(state, pos));
+    }
 }
 
 function getContextMatchFromTag(state: EditorState, node: SyntaxNode): HTMLAncestor | void {
     const tagName = node.getChild('TagName');
     if (tagName) {
         return {
-            name: substr(state, tagName),
+            name: substr(state, tagName).toLowerCase(),
             range: nodeRange(node)
         };
     }
