@@ -6,13 +6,13 @@ import type { UserConfig, AbbreviationContext, ExtractedAbbreviation, Options, E
 import { balancedInward, balancedOutward } from '@emmetio/html-matcher';
 import { balancedInward as cssBalancedInward, balancedOutward as cssBalancedOutward } from '@emmetio/css-matcher';
 import { selectItemCSS, selectItemHTML } from '@emmetio/action-utils';
-import type { TextRange } from '@emmetio/action-utils';
 import evaluate, { extract as extractMath } from '@emmetio/math-expression';
 import type { ExtractOptions as MathExtractOptions } from '@emmetio/math-expression';
 import { syntaxInfo, getMarkupAbbreviationContext, getStylesheetAbbreviationContext } from './syntax';
 import { getTagAttributes, nodeRange, substr } from './utils';
 import getEmmetConfig from './config';
 import getOutputOptions, { field } from './output';
+import type { TextRange } from './types';
 
 interface EvaluatedMath {
     start: number;
@@ -172,7 +172,7 @@ export function getTagContext(state: EditorState, pos: number): ContextTag | und
     return;
 }
 
-function getTagName(state: EditorState, node: SyntaxNode): string {
+export function getTagName(state: EditorState, node: SyntaxNode): string {
     const tagName = node.getChild('TagName');
     return tagName ? substr(state, tagName) : '';
 }

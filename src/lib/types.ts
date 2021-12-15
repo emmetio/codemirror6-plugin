@@ -2,6 +2,8 @@ import type { TextRange } from '@emmetio/action-utils';
 
 export type CSSTokenType = 'selector' | 'propertyName' | 'propertyValue';
 
+export type { TextRange }
+
 export interface CSSMatch {
     /** CSS selector, property or section name */
     name: string;

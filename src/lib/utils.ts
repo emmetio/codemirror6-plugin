@@ -1,7 +1,8 @@
 import type { AttributeToken } from '@emmetio/html-matcher';
-import type { CSSProperty, TextRange } from '@emmetio/action-utils';
-import type { EditorState } from '@codemirror/state';
+import type { CSSProperty } from '@emmetio/action-utils';
+import type { EditorState, SelectionRange } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
+import type { TextRange } from './types';
 
 /** Characters to indicate tab stop start and end in generated snippet */
 export const tabStopStart = String.fromCodePoint(0xFFF0);
@@ -303,4 +304,11 @@ export function getSelectionsFromSnippet(snippet: string, base = 0): { ranges: T
         ranges,
         snippet: result + snippet.slice(offset)
     };
+}
+
+export function selToRange(sel: SelectionRange): TextRange {
+    return [
+        Math.min(sel.anchor, sel.head),
+        Math.max(sel.anchor, sel.head)
+    ];
 }

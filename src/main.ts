@@ -5,6 +5,7 @@ import { html } from '@codemirror/lang-html';
 import { keymap } from '@codemirror/view';
 import { expandAbbreviation } from './plugin';
 import createTracker from './tracker';
+import { balanceOutward, balanceInward } from './commands/balance';
 
 const text = `<html style="color: green">
   <!-- this is a comment -->
@@ -20,6 +21,12 @@ const text = `<html style="color: green">
     </style>
   </head>
   <body>
+    <ul>
+      <li><a href="">dsfjs dkfj</a></li>
+      <li><a href=""></a></li>
+      <li><a href=""></a></li>
+      <li><a href=""></a></li>
+    </ul>
     line 1
     line 2
     line 3
@@ -45,6 +52,9 @@ let view = new EditorView({
             keymap.of([{
                 key: 'Cmd-e',
                 run: expandAbbreviation
+            }, {
+                key: 'Cmd-Shift-d',
+                run: balanceInward
             }]),
         ]
     }),

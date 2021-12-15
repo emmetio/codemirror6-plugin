@@ -3,8 +3,7 @@ import { cssLanguage } from '@codemirror/lang-css';
 import { htmlLanguage } from '@codemirror/lang-html';
 import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
-import type { TextRange } from '@emmetio/action-utils';
-import type { CSSContext, CSSMatch, HTMLAncestor, HTMLContext, HTMLType } from './types';
+import type { CSSContext, CSSMatch, HTMLAncestor, HTMLContext, HTMLType, TextRange } from './types';
 import { contains, getAttributeValueRange, last, nodeRange, substr } from './utils';
 
 interface InlineProp {

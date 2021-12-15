@@ -1,6 +1,6 @@
 import type { MarkupAbbreviation, StylesheetAbbreviation, UserConfig } from 'emmet';
 import { stylesheetAbbreviation, markupAbbreviation } from 'emmet';
-import type { AbbreviationError, StartTrackingParams, TextRange } from '@emmetio/action-utils';
+import type { AbbreviationError, StartTrackingParams } from '@emmetio/action-utils';
 import { ViewUpdate, ViewPlugin, Decoration, keymap } from '@codemirror/view';
 import type { DecorationSet, Command } from '@codemirror/view';
 import { EditorState, StateEffect, StateField, Transaction } from '@codemirror/state';
@@ -10,7 +10,7 @@ import { cssLanguage } from '@codemirror/lang-css';
 import { getCSSContext, getHTMLContext } from '../lib/context';
 import { docSyntax, getMarkupAbbreviationContext, getStylesheetAbbreviationContext, getSyntaxType, isCSS, isHTML, isJSX, isSupported } from '../lib/syntax';
 import getOutputOptions from '../lib/output';
-import type { CSSContext } from '../lib/types';
+import type { CSSContext, TextRange } from '../lib/types';
 import { contains, getCaret, getSelectionsFromSnippet, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
 import AbbreviationPreviewWidget from './AbbreviationPreviewWidget';
