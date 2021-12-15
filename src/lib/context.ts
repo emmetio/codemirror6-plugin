@@ -18,17 +18,25 @@ const nodeToHTMLType: Record<string, HTMLType> = {
 };
 
 export function getContext(state: EditorState, pos: number): HTMLContext | CSSContext | undefined {
-    const topLang = state.facet(language);
-    if (topLang === htmlLanguage) {
-        // HTML syntax may embed CSS
-        return cssLanguage.isActiveAt(state, pos)
-            ? getCSSContext(state, pos)
-            : getHTMLContext(state, pos);
-    }
-
-    if (topLang === cssLanguage) {
+    if (cssLanguage.isActiveAt(state, pos)) {
         return getCSSContext(state, pos);
     }
+
+    if (htmlLanguage.isActiveAt(state, pos)) {
+        return getHTMLContext(state, pos);
+    }
+
+    // const topLang = state.facet(language);
+    // if (topLang === htmlLanguage) {
+    //     // HTML syntax may embed CSS
+    //     return cssLanguage.isActiveAt(state, pos)
+    //         ? getCSSContext(state, pos)
+    //         : getHTMLContext(state, pos);
+    // }
+
+    // if (topLang === cssLanguage) {
+    //     return getCSSContext(state, pos);
+    // }
 
     return;
 }
@@ -183,7 +191,7 @@ function getContextMatchFromTag(state: EditorState, node: SyntaxNode): HTMLAnces
 /**
  * Returns range of CSS selector from given rule block
  */
-function getSelectorRange(node: SyntaxNode): TextRange {
+export function getSelectorRange(node: SyntaxNode): TextRange {
     let from = node.from;
     let to = from;
     for (let child = node.firstChild; child && child.name !== 'Block'; child = child.nextSibling) {
@@ -197,7 +205,7 @@ function getSelectorRange(node: SyntaxNode): TextRange {
  * Returns CSS property name and value ranges.
  * @param node The `name: Declaration` node
  */
-function getPropertyRanges(node: SyntaxNode): { name: TextRange | undefined, value: TextRange | undefined } {
+export function getPropertyRanges(node: SyntaxNode): { name: TextRange | undefined, value: TextRange | undefined } {
     let name: TextRange | undefined;
     let value: TextRange | undefined;
     let ptr = node.firstChild;

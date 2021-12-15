@@ -14,6 +14,7 @@ const text = `<html style="color: green">
     <style>
     body {
       padding: 10px;
+      position: absolute;
     }
     .foo, #bar, div:not(:first-of-type) {
         margin: 0;
