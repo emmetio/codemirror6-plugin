@@ -9,6 +9,7 @@ import { balanceOutward, balanceInward } from './commands/balance';
 import { toggleComment } from './commands/comment';
 import { evaluateMath } from './commands/evaluate-math';
 import { goToNextEditPoint, goToPreviousEditPoint } from './commands/go-to-edit-point';
+import { goToTagPair } from './commands/go-to-tag-pair';
 
 const text = `<html style="color: green">
   <!-- this is a comment -->
@@ -72,6 +73,9 @@ let view = new EditorView({
             }, {
                 key: 'Ctrl-Alt-ArrowRight',
                 run: goToNextEditPoint
+            }, {
+                key: 'Ctrl-g',
+                run: goToTagPair
             }]),
         ]
     }),
