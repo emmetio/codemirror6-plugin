@@ -57,8 +57,6 @@ export function getCSSContext(state: EditorState, pos: number, embedded?: TextRa
     const stack: CSSMatch[] = [];
 
     for (let node: SyntaxNode | null = tree; node; node = node.parent) {
-        console.log('css walk', node.name);
-
         if (node.name === 'RuleSet') {
             const sel = getSelectorRange(node);
             stack.push({

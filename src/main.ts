@@ -10,6 +10,7 @@ import { toggleComment } from './commands/comment';
 import { evaluateMath } from './commands/evaluate-math';
 import { goToNextEditPoint, goToPreviousEditPoint } from './commands/go-to-edit-point';
 import { goToTagPair } from './commands/go-to-tag-pair';
+import { incrementNumber1, decrementNumber1 } from './commands/inc-dec-number';
 
 const text = `<html style="color: green">
   <!-- this is a comment -->
@@ -76,6 +77,12 @@ let view = new EditorView({
             }, {
                 key: 'Ctrl-g',
                 run: goToTagPair
+            }, {
+                key: 'Ctrl-Alt-ArrowUp',
+                run: incrementNumber1
+            }, {
+                key: 'Ctrl-Alt-ArrowDown',
+                run: decrementNumber1
             }]),
         ]
     }),

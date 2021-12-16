@@ -1,3 +1,4 @@
+import type { EditorState, Transaction } from '@codemirror/state';
 import type { TextRange } from '@emmetio/action-utils';
 
 export type CSSTokenType = 'selector' | 'propertyName' | 'propertyValue';
@@ -58,4 +59,9 @@ export interface HTMLMatch {
     type: HTMLType;
     /** Range of matched element in source code */
     range: TextRange;
+}
+
+export interface StateCommandTarget {
+    state: EditorState;
+    dispatch: (transaction: Transaction) => void;
 }
