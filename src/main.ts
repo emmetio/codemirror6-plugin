@@ -6,6 +6,7 @@ import { keymap } from '@codemirror/view';
 import { expandAbbreviation } from './plugin';
 import createTracker from './tracker';
 import { balanceOutward, balanceInward } from './commands/balance';
+import { toggleComment } from './commands/comment';
 
 const text = `<html style="color: green">
   <!-- this is a comment -->
@@ -18,13 +19,14 @@ const text = `<html style="color: green">
     }
     .foo, #bar, div:not(:first-of-type) {
         margin: 0;
+        /* border-top: 10px solid black; */
     }
     </style>
   </head>
   <body>
     <ul>
       <li><a href="">dsfjs dkfj</a></li>
-      <li><a href=""></a></li>
+      <!-- <li><a href=""></a></li> -->
       <li><a href=""></a></li>
       <li><a href=""></a></li>
     </ul>
@@ -56,6 +58,9 @@ let view = new EditorView({
             }, {
                 key: 'Cmd-Shift-d',
                 run: balanceInward
+            }, {
+                key: 'Ctrl-/',
+                run: toggleComment
             }]),
         ]
     }),
