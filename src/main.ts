@@ -12,6 +12,7 @@ import { goToNextEditPoint, goToPreviousEditPoint } from './commands/go-to-edit-
 import { goToTagPair } from './commands/go-to-tag-pair';
 import { incrementNumber1, decrementNumber1 } from './commands/inc-dec-number';
 import { removeTag } from './commands/remove-tag';
+import { selectNextItem, selectPreviousItem } from './commands/select-item';
 
 const text = `<html style="color: green">
   <!-- this is a comment -->
@@ -87,6 +88,12 @@ let view = new EditorView({
             }, {
                 key: 'Ctrl-\'',
                 run: removeTag
+            }, {
+                key: 'Ctrl-.',
+                run: selectNextItem
+            }, {
+                key: 'Ctrl-,',
+                run: selectPreviousItem
             }]),
         ]
     }),

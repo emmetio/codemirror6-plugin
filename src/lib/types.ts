@@ -5,6 +5,13 @@ export type CSSTokenType = 'selector' | 'propertyName' | 'propertyValue';
 
 export type { TextRange }
 
+export interface RangeObject {
+    from: number;
+    to: number;
+}
+
+export type RangeType = RangeObject | TextRange;
+
 export interface CSSMatch {
     /** CSS selector, property or section name */
     name: string;

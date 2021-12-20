@@ -2,17 +2,12 @@ import type { AttributeToken } from '@emmetio/html-matcher';
 import type { CSSProperty } from '@emmetio/action-utils';
 import type { EditorState, SelectionRange } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
-import type { TextRange } from './types';
+import type { TextRange, RangeObject, RangeType } from './types';
 
 /** Characters to indicate tab stop start and end in generated snippet */
 export const tabStopStart = String.fromCodePoint(0xFFF0);
 export const tabStopEnd = String.fromCodePoint(0xFFF1);
 export const stateKey = '$$emmet';
-
-interface RangeObject {
-    from: number;
-    to: number;
-}
 
 export interface AbbrError {
     message: string,
@@ -227,22 +222,30 @@ export function htmlEscape(str: string): string {
 /**
  * Check if `a` and `b` contains the same range
  */
-export function rangesEqual(a: TextRange, b: TextRange): boolean {
-    return a[0] === b[0] && a[1] === b[1];
+export function rangesEqual(a: RangeType, b: RangeType): boolean {
+    return rangeFrom(a) === rangeTo(b) && rangeTo(a) === rangeTo(b);
 }
 
 /**
  * Check if range `a` fully contains range `b`
  */
-export function rangeContains(a: TextRange, b: TextRange): boolean {
-    return a[0] <= b[0] && a[1] >= b[1];
+export function rangeContains(a: RangeType, b: RangeType): boolean {
+    return rangeFrom(a) <= rangeFrom(b) && rangeTo(a) >= rangeTo(b);
 }
 
 /**
  * Check if given range is empty
  */
-export function rangeEmpty(r: TextRange): boolean {
-    return r[0] === r[1];
+export function rangeEmpty(r: RangeType): boolean {
+    return rangeFrom(r) === rangeTo(r);
+}
+
+export function rangeFrom(r: RangeType): number {
+    return Array.isArray(r) ? r[0] : r.from;
+}
+
+export function rangeTo(r: RangeType): number {
+    return Array.isArray(r) ? r[1] : r.to;
 }
 
 /**

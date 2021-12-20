@@ -5,7 +5,7 @@ import { cssLanguage } from '@codemirror/lang-css';
 import { htmlLanguage } from '@codemirror/lang-html';
 import type { SyntaxNode } from '@lezer/common';
 import type { TextRange } from '../lib/types';
-import { contains, last, narrowToNonSpace, nodeRange, selToRange } from '../lib/utils';
+import { contains, last, narrowToNonSpace, nodeRange, rangeContains, rangesEqual, selToRange } from '../lib/utils';
 import { getPropertyRanges } from '../lib/context';
 
 export const balanceOutward: StateCommand = ({ state, dispatch }) => {
@@ -215,17 +215,6 @@ function compactRanges(ranges: TextRange[], inward: boolean): TextRange[] {
     }
 
     return result;
-}
-
-function rangeContains(a: TextRange, b: TextRange): boolean {
-    return a[0] <= b[0] && a[1] >= b[1];
-}
-
-/**
- * Check if `a` and `b` contains the same range
- */
-export function rangesEqual(a: TextRange, b: TextRange): boolean {
-    return a[0] === b[0] && a[1] === b[1];
 }
 
 function getChildOfType(node: SyntaxNode, types: string[]): SyntaxNode | null {
