@@ -1,10 +1,12 @@
-import { language, syntaxTree } from '@codemirror/language';
+import { syntaxTree } from '@codemirror/language';
 import { cssLanguage } from '@codemirror/lang-css';
 import { htmlLanguage } from '@codemirror/lang-html';
 import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import type { CSSContext, CSSMatch, HTMLAncestor, HTMLContext, HTMLType, TextRange } from './types';
 import { contains, getAttributeValueRange, last, nodeRange, substr } from './utils';
+
+// TODO use RangeObject instead of TextRange
 
 interface InlineProp {
     name: TextRange;

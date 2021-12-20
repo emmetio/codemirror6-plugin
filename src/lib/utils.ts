@@ -112,6 +112,16 @@ export function attributeRange(attr: AttributeToken): TextRange {
 }
 
 /**
+ * Returns range of full CSS declaration
+ */
+export function fullCSSDeclarationRange(node: SyntaxNode): RangeObject {
+    return {
+        from: node.from,
+        to: node.nextSibling?.name === ';' ? node.nextSibling.to : node.to
+    };
+}
+
+/**
  * Returns patched version of given HTML attribute, parsed by Emmet HTML matcher
  */
 export function patchAttribute(attr: AttributeToken, value: string | number, name = attr.name) {

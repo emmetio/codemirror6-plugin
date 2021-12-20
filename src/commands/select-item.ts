@@ -1,18 +1,26 @@
 import { syntaxTree } from '@codemirror/language';
 import type { EditorState, SelectionRange, StateCommand } from '@codemirror/state';
 import { EditorSelection } from '@codemirror/state';
+import { cssLanguage } from '@codemirror/lang-css';
 import type { SyntaxNode, TreeCursor } from '@lezer/common';
-import type { RangeObject, StateCommandTarget } from '../lib/types';
-import { isQuote, isSpace, rangeContains, substr } from '../lib/utils';
+import type { RangeObject, StateCommandTarget, TextRange } from '../lib/types';
+import { fullCSSDeclarationRange, isQuote, isSpace, rangeContains, substr } from '../lib/utils';
+import { getPropertyRanges, getSelectorRange } from '../lib/context';
 
 export const selectNextItem: StateCommand = target => selectItemCommand(target, false);
 export const selectPreviousItem: StateCommand = target => selectItemCommand(target, true);
+
+const htmlParents = new Set(['OpenTag', 'CloseTag', 'SelfClosingTag']);
+const cssEnter = new Set(['Block', 'RuleSet', 'StyleSheet']);
+const cssParents = new Set(['RuleSet', 'Block', 'StyleSheet', 'Declaration']);
 
 function selectItemCommand({ state, dispatch }: StateCommandTarget, reverse: boolean): boolean {
     let handled = false;
     const selections: SelectionRange[] = [];
     for (const sel of state.selection.ranges) {
-        const range = getHTMLRange(state, sel, reverse);
+        const range = cssLanguage.isActiveAt(state, sel.from)
+            ? getCSSRange(state, sel, reverse)
+            : getHTMLRange(state, sel, reverse);
         if (range) {
             handled = true;
             selections.push(EditorSelection.range(range.from, range.to));
@@ -32,12 +40,12 @@ function selectItemCommand({ state, dispatch }: StateCommandTarget, reverse: boo
     return false;
 }
 
-function getHTMLRange(state: EditorState, sel: SelectionRange, reverse?: boolean) {
-    const cursor = getStartHTMLNode(state, sel).cursor;
+function getHTMLRange(state: EditorState, sel: SelectionRange, reverse?: boolean): RangeObject | undefined {
+    const { cursor } = getStartHTMLNode(state, sel);
 
     do {
         if (cursor.name === 'OpenTag' || cursor.name === 'SelfClosingTag') {
-            const ranges = getTagCandidates(state, cursor.node);
+            const ranges = getHTMLCandidates(state, cursor.node);
             const range = findRange(sel, ranges, reverse);
             if (range) {
                 return range;
@@ -48,8 +56,27 @@ function getHTMLRange(state: EditorState, sel: SelectionRange, reverse?: boolean
     return;
 }
 
+function getCSSRange(state: EditorState, sel: SelectionRange, reverse?: boolean) {
+    const { cursor } = getStartCSSNode(state, sel);
+
+    do {
+        const ranges = getCSSCandidates(state, cursor.node);
+        const range = findRange(sel, ranges, reverse);
+        if (range) {
+            return range;
+        }
+    } while (moveCSSCursor(cursor, reverse));
+
+    return;
+}
+
 function moveHTMLCursor(cursor: TreeCursor, reverse?: boolean): boolean {
     const enter = cursor.name === 'Element';
+    return reverse ? cursor.prev(enter) : cursor.next(enter);
+}
+
+function moveCSSCursor(cursor: TreeCursor, reverse?: boolean): boolean {
+    const enter = cssEnter.has(cursor.name);
     return reverse ? cursor.prev(enter) : cursor.next(enter);
 }
 
@@ -57,10 +84,24 @@ function getStartHTMLNode(state: EditorState, sel: SelectionRange): SyntaxNode {
     let node: SyntaxNode = syntaxTree(state).resolveInner(sel.to, 1);
 
     // In case if we’re inside tag, find closest start node
-    const expectedParents = new Set(['OpenTag', 'CloseTag', 'SelfClosingTag']);
     let ctx: SyntaxNode | null = node;
     while (ctx) {
-        if (expectedParents.has(ctx.name)) {
+        if (htmlParents.has(ctx.name)) {
+            return ctx;
+        }
+        ctx = ctx.parent;
+    }
+
+    return node;
+}
+
+function getStartCSSNode(state: EditorState, sel: SelectionRange): SyntaxNode {
+    let node: SyntaxNode = syntaxTree(state).resolveInner(sel.to, 1);
+
+    // In case if we’re inside tag, find closest start node
+    let ctx: SyntaxNode | null = node.parent;
+    while (ctx) {
+        if (cssParents.has(ctx.name)) {
             return ctx;
         }
         ctx = ctx.parent;
@@ -72,7 +113,7 @@ function getStartHTMLNode(state: EditorState, sel: SelectionRange): SyntaxNode {
 /**
  * Returns candidates for selection from given StartTag or SelfClosingTag
  */
-function getTagCandidates(state: EditorState, node: SyntaxNode): RangeObject[] {
+function getHTMLCandidates(state: EditorState, node: SyntaxNode): RangeObject[] {
     let result: RangeObject[] = [];
     let child = node.firstChild;
     while (child) {
@@ -91,6 +132,30 @@ function getTagCandidates(state: EditorState, node: SyntaxNode): RangeObject[] {
             }
         }
         child = child.nextSibling;
+    }
+
+    return result;
+}
+
+/**
+ * Returns candidates for RuleSet node
+ */
+function getCSSCandidates(state: EditorState, node: SyntaxNode): RangeObject[] {
+    let result: RangeObject[] = [];
+    if (node.name === 'RuleSet') {
+        const selector = getSelectorRange(node);
+        result.push(toRangeObj(selector));
+        const block = node.getChild('Block');
+        if (block) {
+            for (const child of block.getChildren('Declaration')) {
+                result = result.concat(getCSSCandidates(state, child));
+            }
+        }
+    } else if (node.name === 'Declaration') {
+        result.push(fullCSSDeclarationRange(node));
+        const { name, value } = getPropertyRanges(node);
+        name && result.push(toRangeObj(name));
+        value && result.push(toRangeObj(value));
     }
 
     return result;
@@ -176,4 +241,12 @@ function findRange(sel: SelectionRange, ranges: RangeObject[], reverse = false):
     }
 
     return !needNext ? candidate : undefined;
+}
+
+
+function toRangeObj(range: TextRange): RangeObject {
+    return {
+        from: range[0],
+        to: range[1]
+    };
 }

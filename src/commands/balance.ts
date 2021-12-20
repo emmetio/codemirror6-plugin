@@ -8,6 +8,8 @@ import type { TextRange } from '../lib/types';
 import { contains, last, narrowToNonSpace, nodeRange, rangeContains, rangesEqual, selToRange } from '../lib/utils';
 import { getPropertyRanges } from '../lib/context';
 
+// TODO use RangeObject instead of TextRange
+
 export const balanceOutward: StateCommand = ({ state, dispatch }) => {
     const nextSel: SelectionRange[] = [];
     let hasMatch = false;
@@ -192,6 +194,7 @@ function pushCSSRanges(state: EditorState, node: SyntaxNode, pos: number, ranges
             ranges.push(name);
         }
 
+        // TODO use fullCSSDeclarationRange() util function
         const propRange = nodeRange(node);
         const next = node.nextSibling;
         if (next?.name === ';') {
