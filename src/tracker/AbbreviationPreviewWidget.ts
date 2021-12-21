@@ -36,6 +36,10 @@ export default class AbbreviationPreviewWidget extends WidgetType {
     toDOM() {
         const elem = document.createElement('div') as HTMLElementWithView;
         elem.className = 'emmet-preview';
+        if (this.syntax === 'error') {
+            elem.classList.add('emmet-preview_error');
+        }
+
         elem.view = new EditorView({
             state: EditorState.create({
                 doc: this.value,

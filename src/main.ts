@@ -4,7 +4,7 @@ import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
 import { html } from '@codemirror/lang-html';
 import { keymap } from '@codemirror/view';
 import { expandAbbreviation } from './plugin';
-import createTracker from './tracker';
+import createTracker, { enterAbbreviationMode } from './tracker';
 import { balanceOutward, balanceInward } from './commands/balance';
 import { toggleComment } from './commands/comment';
 import { evaluateMath } from './commands/evaluate-math';
@@ -64,6 +64,9 @@ let view = new EditorView({
             keymap.of([{
                 key: 'Cmd-e',
                 run: expandAbbreviation
+            },{
+                key: 'Cmd-Shift-e',
+                run: enterAbbreviationMode
             }, {
                 key: 'Cmd-Shift-d',
                 run: balanceOutward

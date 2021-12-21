@@ -9,6 +9,10 @@
     font-size: 0.8em;
 }
 
+.emmet-preview_error {
+    color: red;
+}
+
 .emmet-wrap-with-abbreviation {
     position: absolute;
     top: 0;
