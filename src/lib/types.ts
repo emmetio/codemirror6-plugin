@@ -1,9 +1,9 @@
+import type { UserConfig } from 'emmet';
 import type { EditorState, Transaction } from '@codemirror/state';
-import type { TextRange } from '@emmetio/action-utils';
 
 export type CSSTokenType = 'selector' | 'propertyName' | 'propertyValue';
 
-export type { TextRange }
+export type TextRange = [number, number];
 
 export interface RangeObject {
     from: number;
@@ -71,4 +71,15 @@ export interface HTMLMatch {
 export interface StateCommandTarget {
     state: EditorState;
     dispatch: (transaction: Transaction) => void;
+}
+
+export interface AbbreviationError {
+    message: string;
+    pos: number;
+}
+
+export interface StartTrackingParams {
+    config: UserConfig;
+    offset?: number;
+    forced?: boolean;
 }

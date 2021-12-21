@@ -1,5 +1,4 @@
 import type { SyntaxType, AbbreviationContext } from 'emmet';
-import { attributes } from '@emmetio/html-matcher';
 import type { EditorState } from '@codemirror/state';
 import { language, syntaxTree } from '@codemirror/language';
 import { cssLanguage } from '@codemirror/lang-css';
@@ -7,8 +6,7 @@ import { htmlLanguage } from '@codemirror/lang-html';
 import type { SyntaxNode } from '@lezer/common';
 import { getContext } from './context';
 import type { HTMLContext, CSSContext } from './types';
-import type { EnableForSyntax } from './config';
-import { last, attributeValue, getTagAttributes } from './utils';
+import { last, getTagAttributes } from './utils';
 
 const xmlSyntaxes = ['xml', 'xsl', 'jsx'];
 const htmlSyntaxes = ['html', 'htmlmixed', 'vue'];
@@ -142,40 +140,6 @@ export function isCSS(syntax?: string): boolean {
  */
 export function isJSX(syntax?: string): boolean {
     return syntax ? jsxSyntaxes.includes(syntax) : false;
-}
-
-/**
- * Check if given option if enabled for specified syntax
- */
-export function enabledForSyntax(opt: EnableForSyntax, info: SyntaxInfo) {
-    if (opt === true) {
-        return true;
-    }
-
-    if (Array.isArray(opt)) {
-        const candidates: string[] = [info.type, info.syntax!];
-        if (info.inline) {
-            candidates.push(`${info.type}-inline`, `${info.syntax!}-inline`);
-        }
-
-        return candidates.some(c => opt.includes(c));
-    }
-
-    return false;
-}
-
-/**
- * Returns embedded stylesheet syntax from given HTML context
- */
-export function getEmbeddedStyleSyntax(code: string, ctx: HTMLContext): string | void {
-    const parent = last(ctx.ancestors);
-    if (parent && parent.name === 'style') {
-        for (const attr of attributes(code.slice(parent.range[0], parent.range[1]), parent.name)) {
-            if (attr.name === 'type') {
-                return attributeValue(attr);
-            }
-        }
-    }
 }
 
 /**

@@ -3,23 +3,11 @@ import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
 import expandAbbreviation, { extract as extractAbbreviation, resolveConfig } from 'emmet';
 import type { UserConfig, AbbreviationContext, ExtractedAbbreviation, Options, ExtractOptions, MarkupAbbreviation, StylesheetAbbreviation, SyntaxType } from 'emmet';
-import { balancedInward, balancedOutward } from '@emmetio/html-matcher';
-import { balancedInward as cssBalancedInward, balancedOutward as cssBalancedOutward } from '@emmetio/css-matcher';
-import { selectItemCSS, selectItemHTML } from '@emmetio/action-utils';
-import evaluate, { extract as extractMath } from '@emmetio/math-expression';
-import type { ExtractOptions as MathExtractOptions } from '@emmetio/math-expression';
 import { syntaxInfo, getMarkupAbbreviationContext, getStylesheetAbbreviationContext } from './syntax';
 import { getTagAttributes, nodeRange, substr } from './utils';
 import getEmmetConfig from './config';
 import getOutputOptions, { field } from './output';
 import type { TextRange } from './types';
-
-interface EvaluatedMath {
-    start: number;
-    end: number;
-    result: number;
-    snippet: string;
-}
 
 export interface ContextTag extends AbbreviationContext {
     open: TextRange;
@@ -82,55 +70,6 @@ export function extract(code: string, pos: number, type: SyntaxType = 'markup', 
         type,
         ...options
     });
-}
-
-/**
- * Returns list of tags for balancing for given code
- */
-export function balance(code: string, pos: number, inward = false, xml = false) {
-    const options = { xml };
-    return inward
-        ? balancedInward(code, pos, options)
-        : balancedOutward(code, pos, options);
-}
-
-/**
- * Returns list of selector/property ranges for balancing for given code
- */
-export function balanceCSS(code: string, pos: number, inward?: boolean) {
-    return inward
-        ? cssBalancedInward(code, pos)
-        : cssBalancedOutward(code, pos);
-}
-
-/**
- * Returns model for selecting next/previous item
- */
-export function selectItem(code: string, pos: number, isCSS?: boolean, isPrevious?: boolean) {
-    return isCSS
-        ? selectItemCSS(code, pos, isPrevious)
-        : selectItemHTML(code, pos, isPrevious);
-}
-
-/**
- * Finds and evaluates math expression at given position in line
- */
-export function evaluateMath(code: string, pos: number, options?: Partial<MathExtractOptions>): EvaluatedMath | undefined {
-    const expr = extractMath(code, pos, options);
-    if (expr) {
-        try {
-            const [start, end] = expr;
-            const result = evaluate(code.slice(start, end));
-            if (result !== null) {
-                return {
-                    start, end, result,
-                    snippet: result.toFixed(4).replace(/\.?0+$/, '')
-                };
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    }
 }
 
 /**

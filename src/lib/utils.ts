@@ -1,5 +1,3 @@
-import type { AttributeToken } from '@emmetio/html-matcher';
-import type { CSSProperty } from '@emmetio/action-utils';
 import type { EditorState, SelectionRange } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import type { TextRange, RangeObject, RangeType } from './types';
@@ -20,17 +18,6 @@ export interface EmmetState {
     id: string;
     tracker?: DisposeFn | null;
     tagMatch?: DisposeFn | null;
-}
-
-export const pairs: Record<string, string> = {
-    '{': '}',
-    '[': ']',
-    '(': ')'
-};
-
-export const pairsEnd: string[] = [];
-for (const key of Object.keys(pairs)) {
-    pairsEnd.push(pairs[key]);
 }
 
 /**
@@ -56,8 +43,7 @@ export function narrowToNonSpace(state: EditorState, range: TextRange): TextRang
  * Returns current caret position for single selection
  */
 export function getCaret(state: EditorState): number {
-    const sel = state.selection.main;
-    return Math.max(sel.anchor, sel.head);
+    return state.selection.main.from;
 }
 
 /**
@@ -94,24 +80,6 @@ export function nodeRange(node: RangeObject): TextRange {
 }
 
 /**
- * Returns value of given attribute, parsed by Emmet HTML matcher
- */
-export function attributeValue(attr: AttributeToken): string | undefined {
-    const { value } = attr
-    return value && isQuoted(value)
-        ? value.slice(1, -1)
-        : value;
-}
-
-/**
- * Returns region that covers entire attribute
- */
-export function attributeRange(attr: AttributeToken): TextRange {
-    const end = attr.value != null ? attr.valueEnd! : attr.nameEnd;
-    return [attr.nameStart, end];
-}
-
-/**
  * Returns range of full CSS declaration
  */
 export function fullCSSDeclarationRange(node: SyntaxNode): RangeObject {
@@ -119,49 +87,6 @@ export function fullCSSDeclarationRange(node: SyntaxNode): RangeObject {
         from: node.from,
         to: node.nextSibling?.name === ';' ? node.nextSibling.to : node.to
     };
-}
-
-/**
- * Returns patched version of given HTML attribute, parsed by Emmet HTML matcher
- */
-export function patchAttribute(attr: AttributeToken, value: string | number, name = attr.name) {
-    let before = '';
-    let after = '';
-
-    if (attr.value != null) {
-        if (isQuoted(attr.value)) {
-            // Quoted value or React-like expression
-            before = attr.value[0];
-            after = attr.value[attr.value.length - 1];
-        }
-    } else {
-        // Attribute without value (boolean)
-        before = after = '"';
-    }
-
-    return `${name}=${before}${value}${after}`;
-}
-
-/**
- * Returns patched version of given CSS property, parsed by Emmet CSS matcher
- */
-export function patchProperty(state: EditorState, prop: CSSProperty, value: string, name?: string) {
-    if (name == null) {
-        name = substr(state, prop.name);
-    }
-
-    const before = substr(state, [prop.before, prop.name[0]]);
-    const between = substr(state, [prop.name[1], prop.value[0]]);
-    const after = substr(state, [prop.value[1], prop.after]);
-
-    return [before, name, between, value, after].join('');
-}
-
-/**
- * Check if given value is either quoted or written as expression
- */
-export function isQuoted(value: string | undefined): boolean {
-    return !!value && (isQuotedString(value) || isExprString(value));
 }
 
 export function isQuote(ch: string | undefined) {
@@ -201,21 +126,6 @@ export function getTagAttributes(state: EditorState, node: SyntaxNode): Record<s
 
     return result;
 }
-
-/**
- * Check if given string is quoted with single or double quotes
- */
-export function isQuotedString(str: string): boolean {
-    return str.length > 1 && isQuote(str[0]) && str[0] === str.slice(-1);
-}
-
-/**
- * Check if given string contains expression, e.g. wrapped with `{` and `}`
- */
-function isExprString(str: string): boolean {
-    return str[0] === '{' && str.slice(-1) === '}';
-}
-
 export function isSpace(ch: string): boolean {
     return /^[\s\n\r]+$/.test(ch);
 }
@@ -256,22 +166,6 @@ export function rangeFrom(r: RangeType): number {
 
 export function rangeTo(r: RangeType): number {
     return Array.isArray(r) ? r[1] : r.to;
-}
-
-/**
- * Generates snippet with error pointer
- */
-export function errorSnippet(err: AbbrError, baseClass = 'emmet-error-snippet'): string {
-    const msg = err.message.split('\n')[0];
-    const spacer = ' '.repeat(err.pos || 0);
-    return `<div class="${baseClass}">
-        <div class="${baseClass}-ptr">
-            <div class="${baseClass}-line"></div>
-            <div class="${baseClass}-tip"></div>
-            <div class="${baseClass}-spacer">${spacer}</div>
-        </div>
-        <div class="${baseClass}-message">${htmlEscape(msg.replace(/\s+at\s+\d+$/, ''))}</div>
-    </div>`;
 }
 
 /**
