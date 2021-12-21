@@ -9,7 +9,7 @@ import { cssLanguage } from '@codemirror/lang-css';
 import { getCSSContext, getHTMLContext } from '../lib/context';
 import { docSyntax, getMarkupAbbreviationContext, getStylesheetAbbreviationContext, getSyntaxType, isCSS, isHTML, isJSX, isSupported } from '../lib/syntax';
 import getOutputOptions from '../lib/output';
-import type { CSSContext, TextRange, AbbreviationError, StartTrackingParams } from '../lib/types';
+import type { CSSContext, AbbreviationError, StartTrackingParams, RangeObject } from '../lib/types';
 import { contains, getCaret, getSelectionsFromSnippet, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
 import AbbreviationPreviewWidget from './AbbreviationPreviewWidget';
@@ -18,7 +18,7 @@ type AbbreviationTracker = AbbreviationTrackerValid | AbbreviationTrackerError;
 
 interface AbbreviationTrackerBase {
     /** Range in editor for abbreviation */
-    range: TextRange;
+    range: RangeObject;
 
     /** Actual abbreviation, tracked by current tracker */
     abbreviation: string;
@@ -98,14 +98,14 @@ const abbreviationTracker = ViewPlugin.fromClass(class {
 
         if (tracker) {
             const { range } = tracker;
-            decors.push(underlineMark.range(range[0], range[1]));
+            decors.push(underlineMark.range(range.from, range.to));
 
             if (tracker.type === 'abbreviation' && contains(range, getCaret(state))) {
                 const preview = Decoration.widget({
                     widget: new AbbreviationPreviewWidget(tracker.preview, tracker.config.syntax || 'html'),
                     side: 1
                 });
-                decors.push(preview.range(range[0]));
+                decors.push(preview.range(range.from));
             }
             this.decorations = Decoration.set(decors, true);
         } else {
@@ -121,7 +121,7 @@ const tabKeyHandler: Command = ({ state, dispatch }) => {
     console.log('handle tab', tracker);
     if (tracker && contains(tracker.range, getCaret(state))) {
         console.log('will expand by tab');
-        const [from, to] = tracker.range;
+        const { from, to } = tracker.range;
         const expanded = expand(tracker.abbreviation, tracker.config);
         const { ranges, snippet } = getSelectionsFromSnippet(expanded, from);
         const nextSel = ranges[0];
@@ -134,8 +134,8 @@ const tabKeyHandler: Command = ({ state, dispatch }) => {
                 insert: snippet
             }],
             selection: {
-                head: nextSel[0],
-                anchor: nextSel[1]
+                head: nextSel.from,
+                anchor: nextSel.to
             }
         });
         return true;
@@ -221,7 +221,7 @@ function typingAbbreviation(state: EditorState, pos: number, input: string): Abb
         from -= offset;
     }
 
-    return createTracker(state, [from, to], { config });
+    return createTracker(state, { from, to }, { config });
 }
 
 /**
@@ -296,10 +296,10 @@ function getCSSActivationContext(state: EditorState, pos: number, syntax: string
  * Activate only if it’s a nested section and it’s a first character of selector
  */
 function isTypingBeforeSelector(state: EditorState, pos: number, { current }: CSSContext): boolean {
-    if (current?.type === 'selector' && current.range[0] === pos - 1) {
+    if (current?.type === 'selector' && current.range.from === pos - 1) {
         // Typing abbreviation before selector is tricky one:
         // ensure it’s on its own line
-        const line = state.doc.lineAt(current.range[0]);
+        const line = state.doc.lineAt(current.range.from);
         return line.text.trim().length === 1;
     }
 
@@ -335,8 +335,8 @@ function isValidAbbreviationStart(input: string, syntax: string): boolean {
  * of abbreviation in range and returns either valid abbreviation tracker,
  * error tracker or `null` if abbreviation cannot be created from given range
  */
-function createTracker(state: EditorState, range: TextRange, params: StartTrackingParams): AbbreviationTracker | null {
-    if (range[0] >= range[1]) {
+function createTracker(state: EditorState, range: RangeObject, params: StartTrackingParams): AbbreviationTracker | null {
+    if (range.from >= range.to) {
         // Invalid range
         return null;
     }
@@ -447,12 +447,12 @@ function handleUpdate(state: EditorState, tracker: AbbreviationTracker | null, u
             } else if (contains(range, fromB)) {
                 const removed = toA - fromA;
                 const inserted = toB - fromA;
-                const to = range[1] + inserted - removed;
-                if (to <= range[0] || hasInvalidChars(text.toString())) {
+                const to = range.to + inserted - removed;
+                if (to <= range.from || hasInvalidChars(text.toString())) {
                     console.log('reset tracker');
                     tracker = null;
                 } else {
-                    tracker = createTracker(state, [range[0], to], {
+                    tracker = createTracker(state, { from: range.from, to }, {
                         config: tracker.config
                     });
                 }

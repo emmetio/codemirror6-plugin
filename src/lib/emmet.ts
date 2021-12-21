@@ -4,15 +4,10 @@ import type { SyntaxNode } from '@lezer/common';
 import expandAbbreviation, { extract as extractAbbreviation, resolveConfig } from 'emmet';
 import type { UserConfig, AbbreviationContext, ExtractedAbbreviation, Options, ExtractOptions, MarkupAbbreviation, StylesheetAbbreviation, SyntaxType } from 'emmet';
 import { syntaxInfo, getMarkupAbbreviationContext, getStylesheetAbbreviationContext } from './syntax';
-import { getTagAttributes, nodeRange, substr } from './utils';
+import { getTagAttributes, substr } from './utils';
 import getEmmetConfig from './config';
 import getOutputOptions, { field } from './output';
-import type { TextRange } from './types';
-
-export interface ContextTag extends AbbreviationContext {
-    open: TextRange;
-    close?: TextRange;
-}
+import type { ContextTag } from './types';
 
 export interface ExtractedAbbreviationWithContext extends ExtractedAbbreviation {
     context?: AbbreviationContext;
@@ -87,7 +82,7 @@ export function getTagContext(state: EditorState, pos: number): ContextTag | und
             return {
                 name: getTagName(state, selfClose),
                 attributes: getTagAttributes(state, selfClose),
-                open: nodeRange(selfClose)
+                open: selfClose
             }
         }
 
@@ -97,11 +92,11 @@ export function getTagContext(state: EditorState, pos: number): ContextTag | und
             const ctx: ContextTag = {
                 name: getTagName(state, openTag),
                 attributes: getTagAttributes(state, openTag),
-                open: nodeRange(openTag),
+                open: openTag,
             };
 
             if (closeTag) {
-                ctx.close = nodeRange(closeTag);
+                ctx.close = closeTag;
             }
 
             return ctx;

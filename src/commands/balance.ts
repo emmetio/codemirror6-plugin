@@ -4,8 +4,8 @@ import type { EditorState, StateCommand } from '@codemirror/state';
 import { cssLanguage } from '@codemirror/lang-css';
 import { htmlLanguage } from '@codemirror/lang-html';
 import type { SyntaxNode } from '@lezer/common';
-import type { TextRange } from '../lib/types';
-import { contains, last, narrowToNonSpace, nodeRange, rangeContains, rangesEqual, selToRange } from '../lib/utils';
+import type { RangeObject } from '../lib/types';
+import { contains, fullCSSDeclarationRange, last, narrowToNonSpace, rangeContains, rangesEqual } from '../lib/utils';
 import { getPropertyRanges } from '../lib/context';
 
 // TODO use RangeObject instead of TextRange
@@ -15,67 +15,65 @@ export const balanceOutward: StateCommand = ({ state, dispatch }) => {
     let hasMatch = false;
 
     for (const sel of state.selection.ranges) {
-        const selRange = selToRange(sel);
-        const ranges = getOutwardRanges(state, selRange[0]);
+        const ranges = getOutwardRanges(state, sel.from);
         if (ranges) {
             hasMatch = true;
-            const targetRange = ranges.find(r => rangeContains(r, selRange) && !rangesEqual(r, selRange)) || selRange;
-            nextSel.push(EditorSelection.range(targetRange[0], targetRange[1]));
+            const targetRange = ranges.find(r => rangeContains(r, sel) && !rangesEqual(r, sel)) || sel;
+            nextSel.push(EditorSelection.range(targetRange.from, targetRange.to));
         } else {
             nextSel.push(sel);
         }
     }
 
-    if (!hasMatch) {
-        return false;
+    if (hasMatch) {
+        const tr = state.update({
+            selection: EditorSelection.create(nextSel)
+        });
+
+        dispatch(tr);
+        return true;
     }
 
-    const tr = state.update({
-        selection: EditorSelection.create(nextSel)
-    });
-
-    dispatch(tr);
-    return true;
+    return false;
 };
 
 export const balanceInward: StateCommand = ({ state, dispatch }) => {
     const nextSel: SelectionRange[] = [];
     let hasMatch = false;
     for (const sel of state.selection.ranges) {
-        const selRange = selToRange(sel);
-        const ranges = getInwardRanges(state, selRange[0]);
+        const ranges = getInwardRanges(state, sel.from);
         if (ranges) {
             hasMatch = true;
             // Try to find range which equals to selection: we should pick leftmost
-            let ix = ranges.findIndex(r => rangesEqual(selRange, r));
-            let targetRange = selRange;
+            let ix = ranges.findIndex(r => rangesEqual(sel, r));
+            let targetRange: RangeObject = sel;
 
             if (ix < ranges.length - 1) {
                 targetRange = ranges[ix + 1];
             } else if (ix !== -1) {
                 // No match found, pick closest region
-                targetRange = ranges.slice(ix).find(r => rangeContains(r, selRange)) || selRange;
+                targetRange = ranges.slice(ix).find(r => rangeContains(r, sel)) || sel;
             }
 
-            nextSel.push(EditorSelection.range(targetRange[0], targetRange[1]));
+            nextSel.push(EditorSelection.range(targetRange.from, targetRange.to));
         } else {
             nextSel.push(sel);
         }
     }
 
-    if (!hasMatch) {
-        return false;
+    if (hasMatch) {
+        const tr = state.update({
+            selection: EditorSelection.create(nextSel)
+        });
+
+        dispatch(tr);
+        return true;
     }
 
-    const tr = state.update({
-        selection: EditorSelection.create(nextSel)
-    });
-
-    dispatch(tr);
-    return true;
+    return false;
 };
 
-function getOutwardRanges(state: EditorState, pos: number): TextRange[] | undefined {
+function getOutwardRanges(state: EditorState, pos: number): RangeObject[] | undefined {
     if (cssLanguage.isActiveAt(state, pos)) {
         return getCSSOutwardRanges(state, pos);
     }
@@ -87,7 +85,7 @@ function getOutwardRanges(state: EditorState, pos: number): TextRange[] | undefi
     return;
 }
 
-function getInwardRanges(state: EditorState, pos: number): TextRange[] | undefined {
+function getInwardRanges(state: EditorState, pos: number): RangeObject[] | undefined {
     if (cssLanguage.isActiveAt(state, pos)) {
         return getCSSInwardRanges(state, pos);
     }
@@ -99,8 +97,8 @@ function getInwardRanges(state: EditorState, pos: number): TextRange[] | undefin
     return;
 }
 
-function getHTMLOutwardRanges(state: EditorState, pos: number): TextRange[] {
-    const result: TextRange[] = [];
+function getHTMLOutwardRanges(state: EditorState, pos: number): RangeObject[] {
+    const result: RangeObject[] = [];
     const tree = syntaxTree(state).resolveInner(pos, -1);
 
     for (let node: SyntaxNode | null = tree; node; node = node.parent) {
@@ -112,8 +110,8 @@ function getHTMLOutwardRanges(state: EditorState, pos: number): TextRange[] {
     return compactRanges(result, false);
 }
 
-function getHTMLInwardRanges(state: EditorState, pos: number): TextRange[] {
-    const result: TextRange[] = [];
+function getHTMLInwardRanges(state: EditorState, pos: number): RangeObject[] {
+    const result: RangeObject[] = [];
     let node: SyntaxNode | null = syntaxTree(state).resolveInner(pos, 1);
 
     // Find closest element
@@ -130,8 +128,8 @@ function getHTMLInwardRanges(state: EditorState, pos: number): TextRange[] {
     return compactRanges(result, true);
 }
 
-function getCSSOutwardRanges(state: EditorState, pos: number): TextRange[]  {
-    const result: TextRange[] = [];
+function getCSSOutwardRanges(state: EditorState, pos: number): RangeObject[]  {
+    const result: RangeObject[] = [];
     let node: SyntaxNode | null = syntaxTree(state).resolveInner(pos, -1);
 
     while (node) {
@@ -142,8 +140,8 @@ function getCSSOutwardRanges(state: EditorState, pos: number): TextRange[]  {
     return compactRanges(result, false);
 }
 
-function getCSSInwardRanges(state: EditorState, pos: number): TextRange[] {
-    const result: TextRange[] = [];
+function getCSSInwardRanges(state: EditorState, pos: number): RangeObject[] {
+    const result: RangeObject[] = [];
     const knownNodes = ['Block', 'RuleSet', 'Declaration'];
     let node: SyntaxNode | null = syntaxTree(state).resolveInner(pos, 1);
 
@@ -160,31 +158,34 @@ function getCSSInwardRanges(state: EditorState, pos: number): TextRange[] {
 }
 
 
-function pushHTMLRanges(node: SyntaxNode, ranges: TextRange[]): void {
+function pushHTMLRanges(node: SyntaxNode, ranges: RangeObject[]): void {
     const selfClose = node.getChild('SelfClosingTag');
     if (selfClose) {
-        ranges.push(nodeRange(selfClose));
+        ranges.push(selfClose);
     } else {
         const open = node.getChild('OpenTag');
         if (open) {
             const close = node.getChild('CloseTag');
             if (close) {
                 // Inner range
-                ranges.push([open.to, close.from]);
+                ranges.push({ from: open.to, to: close.from });
                 // Outer range
-                ranges.push([open.from, close.to]);
+                ranges.push({ from: open.from, to: close.to });
             } else {
-                ranges.push(nodeRange(open))
+                ranges.push(open);
             }
         }
     }
 }
 
-function pushCSSRanges(state: EditorState, node: SyntaxNode, pos: number, ranges: TextRange[]): void {
+function pushCSSRanges(state: EditorState, node: SyntaxNode, pos: number, ranges: RangeObject[]): void {
     if (node.name === 'Block') {
-        ranges.push(narrowToNonSpace(state, [node.from + 1, node.to - 1]));
+        ranges.push(narrowToNonSpace(state, {
+            from: node.from + 1,
+            to: node.to - 1
+        }));
     } else if (node.name === 'RuleSet') {
-        ranges.push(nodeRange(node));
+        ranges.push(node);
     } else if (node.name === 'Declaration') {
         const { name, value } = getPropertyRanges(node);
         if (value && contains(value, pos)) {
@@ -194,25 +195,19 @@ function pushCSSRanges(state: EditorState, node: SyntaxNode, pos: number, ranges
             ranges.push(name);
         }
 
-        // TODO use fullCSSDeclarationRange() util function
-        const propRange = nodeRange(node);
-        const next = node.nextSibling;
-        if (next?.name === ';') {
-            propRange[1] = next.to;
-        }
-        ranges.push(propRange);
+        ranges.push(fullCSSDeclarationRange(node));
     }
 }
 
-function compactRanges(ranges: TextRange[], inward: boolean): TextRange[] {
-    const result: TextRange[] = [];
+function compactRanges(ranges: RangeObject[], inward: boolean): RangeObject[] {
+    const result: RangeObject[] = [];
     ranges = [...ranges].sort(inward
-            ? ((a, b) => a[0] - b[0] || b[1] - a[1])
-            : ((a, b) => b[0] - a[0] || a[1] - b[1]));
+            ? ((a, b) => a.from - b.from || b.to - a.to)
+            : ((a, b) => b.from - a.from || a.to - b.to));
 
     for (const range of ranges) {
         const prev = last(result);
-        if (!prev || prev[0] !== range[0] || prev[1] !== range[1]) {
+        if (!prev || prev.from !== range.from || prev.to !== range.to) {
             result.push(range)
         }
     }

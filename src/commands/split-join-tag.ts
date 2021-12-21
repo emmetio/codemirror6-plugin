@@ -10,19 +10,19 @@ export const splitJoinTag: StateCommand = ({ state, dispatch }) => {
             const { open, close } = tag;
             if (close) {
                 // Join tag: remove tag contents, if any, and add closing slash
-                let closing = isSpace(getChar(state, open[1] - 2)) ? '/' : ' /';
+                let closing = isSpace(getChar(state, open.to - 2)) ? '/' : ' /';
                 changes.push({
-                    from: open[1] - 1,
-                    to: close[1],
+                    from: open.to - 1,
+                    to: close.to,
                     insert: `${closing}>`
                 });
             } else {
                 // Split tag: add closing part and remove closing slash
                 let insert = `</${tag.name}>`;
-                let from = open[1];
-                let to = open[1];
+                let from = open.to;
+                let to = open.to;
 
-                if (getChar(state, open[1] - 2) === '/') {
+                if (getChar(state, open.to - 2) === '/') {
                     from -= 2;
                     if (isSpace(getChar(state, from - 1))) {
                         from--;

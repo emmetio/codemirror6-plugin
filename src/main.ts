@@ -66,7 +66,7 @@ let view = new EditorView({
                 run: expandAbbreviation
             }, {
                 key: 'Cmd-Shift-d',
-                run: balanceInward
+                run: balanceOutward
             }, {
                 key: 'Ctrl-/',
                 run: toggleComment

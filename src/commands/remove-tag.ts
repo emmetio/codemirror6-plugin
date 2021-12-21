@@ -1,6 +1,6 @@
 import type { ChangeSpec, EditorState, StateCommand, TransactionSpec } from '@codemirror/state';
 import { getTagContext } from '../lib/emmet';
-import type { ContextTag } from '../lib/emmet';
+import type { ContextTag } from '../lib/types';
 import { lineIndent } from '../lib/output';
 import { narrowToNonSpace, rangeEmpty, isSpace } from '../lib/utils';
 
@@ -28,19 +28,19 @@ function removeTagSpec(state: EditorState, { open, close }: ContextTag): Transac
     const changes: ChangeSpec[] = [];
     if (close) {
         // Remove open and close tag and dedent inner content
-        const innerRange = narrowToNonSpace(state, [open[1], close[0]]);
+        const innerRange = narrowToNonSpace(state, { from: open.to, to: close.from });
         if (!rangeEmpty(innerRange)) {
             // Gracefully remove open and close tags and tweak indentation on tag contents
-            changes.push({ from: open[0], to: innerRange[0] });
+            changes.push({ from: open.from, to: innerRange.from });
 
-            const lineStart = state.doc.lineAt(open[0]);
-            const lineEnd = state.doc.lineAt(close[1]);
+            const lineStart = state.doc.lineAt(open.from);
+            const lineEnd = state.doc.lineAt(close.to);
             if (lineStart.number !== lineEnd.number) {
                 // Skip two lines: first one for open tag, on second one
                 // indentation will be removed with open tag
                 let lineNum = lineStart.number + 2;
-                const baseIndent = getLineIndent(state, open[0]);
-                const innerIndent = getLineIndent(state, innerRange[0]);
+                const baseIndent = getLineIndent(state, open.from);
+                const innerIndent = getLineIndent(state, innerRange.from);
 
                 while (lineNum <= lineEnd.number) {
                     const line = state.doc.line(lineNum);
@@ -55,12 +55,12 @@ function removeTagSpec(state: EditorState, { open, close }: ContextTag): Transac
                 }
             }
 
-            changes.push({ from: innerRange[1], to: close[1] });
+            changes.push({ from: innerRange.to, to: close.to });
         } else {
-            changes.push({ from: open[0], to: close[1] });
+            changes.push({ from: open.from, to: close.to });
         }
     } else {
-        changes.push({ from: open[0], to: open[1] });
+        changes.push(open);
     }
 
     return { changes };

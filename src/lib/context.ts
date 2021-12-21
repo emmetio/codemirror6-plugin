@@ -3,14 +3,14 @@ import { cssLanguage } from '@codemirror/lang-css';
 import { htmlLanguage } from '@codemirror/lang-html';
 import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
-import type { CSSContext, CSSMatch, HTMLAncestor, HTMLContext, HTMLType, TextRange } from './types';
-import { contains, getAttributeValueRange, last, nodeRange, substr } from './utils';
+import type { CSSContext, CSSMatch, HTMLAncestor, HTMLContext, HTMLType, RangeObject } from './types';
+import { contains, getAttributeValueRange, substr } from './utils';
 
 // TODO use RangeObject instead of TextRange
 
 interface InlineProp {
-    name: TextRange;
-    value?: TextRange;
+    name: RangeObject;
+    value?: RangeObject;
 }
 
 const nodeToHTMLType: Record<string, HTMLType> = {
@@ -46,7 +46,7 @@ export function getContext(state: EditorState, pos: number): HTMLContext | CSSCo
 /**
  * Returns CSS context for given location in source code
  */
-export function getCSSContext(state: EditorState, pos: number, embedded?: TextRange) {
+export function getCSSContext(state: EditorState, pos: number, embedded?: RangeObject) {
     const result: CSSContext = {
         type: 'css',
         ancestors: [],
@@ -64,7 +64,7 @@ export function getCSSContext(state: EditorState, pos: number, embedded?: TextRa
             stack.push({
                 name: substr(state, sel),
                 type: 'selector',
-                range: [node.from, node.to]
+                range: node
             });
         } else if (node.name === 'Declaration') {
             const { name, value } = getPropertyRanges(node);
@@ -92,8 +92,8 @@ export function getCSSContext(state: EditorState, pos: number, embedded?: TextRa
     // Check if stack tip contains current current position: make it current
     // context item if so
     if (tip) {
-        const range: TextRange = tip.type === 'selector'
-            ? [tip.range[0], tip.range[0] + tip.name.length]
+        const range: RangeObject = tip.type === 'selector'
+            ? { from: tip.range.from, to: tip.range.from + tip.name.length }
             : tip.range;
         if (contains(range, pos)) {
             result.current = tip;
@@ -147,7 +147,7 @@ export function getHTMLContext(state: EditorState, pos: number): HTMLContext {
 function detectCSSContextFromHTML(state: EditorState, pos: number, ctx: HTMLContext) {
     if (ctx.current?.type === 'open') {
         // Maybe inline CSS? E.g. style="..." attribute
-        let node: SyntaxNode | null = syntaxTree(state).resolve(ctx.current.range[0], 1);
+        let node: SyntaxNode | null = syntaxTree(state).resolve(ctx.current.range.from, 1);
         while (node && node.name !== 'OpenTag') {
             node = node.parent;
         }
@@ -163,18 +163,12 @@ function detectCSSContextFromHTML(state: EditorState, pos: number, ctx: HTMLCont
                     if (attrValue) {
                         const cleanValueRange = getAttributeValueRange(state, attrValue);
                         if (contains(cleanValueRange, pos)) {
-                            ctx.css = getInlineCSSContext(substr(state, cleanValueRange), pos - cleanValueRange[0], cleanValueRange[0]);
+                            ctx.css = getInlineCSSContext(substr(state, cleanValueRange), pos - cleanValueRange.from, cleanValueRange.from);
                         }
                     }
                 }
             }
         }
-    }
-
-    const closestTag = last(ctx.ancestors);
-    if (closestTag?.name === 'style') {
-        // Inside <style> element
-        console.log('inside style', getCSSContext(state, pos));
     }
 }
 
@@ -183,7 +177,7 @@ function getContextMatchFromTag(state: EditorState, node: SyntaxNode): HTMLAnces
     if (tagName) {
         return {
             name: substr(state, tagName).toLowerCase(),
-            range: nodeRange(node)
+            range: node
         };
     }
 }
@@ -191,33 +185,36 @@ function getContextMatchFromTag(state: EditorState, node: SyntaxNode): HTMLAnces
 /**
  * Returns range of CSS selector from given rule block
  */
-export function getSelectorRange(node: SyntaxNode): TextRange {
+export function getSelectorRange(node: SyntaxNode): RangeObject {
     let from = node.from;
     let to = from;
     for (let child = node.firstChild; child && child.name !== 'Block'; child = child.nextSibling) {
         to = child.to;
     }
 
-    return [from, to];
+    return { from, to };
 }
 
 /**
  * Returns CSS property name and value ranges.
  * @param node The `name: Declaration` node
  */
-export function getPropertyRanges(node: SyntaxNode): { name: TextRange | undefined, value: TextRange | undefined } {
-    let name: TextRange | undefined;
-    let value: TextRange | undefined;
+export function getPropertyRanges(node: SyntaxNode): { name: RangeObject | undefined, value: RangeObject | undefined } {
+    let name: RangeObject | undefined;
+    let value: RangeObject | undefined;
     let ptr = node.firstChild;
     if (ptr?.name === 'PropertyName') {
-        name = nodeRange(ptr);
+        name = ptr;
         ptr = ptr.nextSibling;
         if (ptr?.name === ':') {
             ptr = ptr.nextSibling;
         }
 
         if (ptr) {
-            value = [ptr.from, node.lastChild!.to];
+            value = {
+                from: ptr.from,
+                to: node.lastChild!.to
+            };
         }
     }
 
@@ -240,7 +237,10 @@ export function getInlineCSSContext(code: string, pos: number, base = 0): CSSCon
         ancestors: [],
         current: null,
         inline: true,
-        embedded: [pos + base, pos + base + code.length]
+        embedded: {
+            from: pos + base,
+            to: pos + base + code.length
+        }
     };
 
     const props = parseInlineProps(code, pos);
@@ -248,22 +248,31 @@ export function getInlineCSSContext(code: string, pos: number, base = 0): CSSCon
     for (const prop of props) {
         if (prop.value && contains(prop.value, pos)) {
             result.current = {
-                name: code.substring(prop.value[0], prop.value[1]).trim(),
+                name: code.substring(prop.value.from, prop.value.to).trim(),
                 type: 'propertyValue',
-                range: [base + prop.value[0], base + prop.value[1]]
+                range: {
+                    from: base + prop.value.from,
+                    to: base + prop.value.to
+                }
             };
             result.ancestors.push({
-                name: code.substring(prop.name[0], prop.name[1]).trim(),
+                name: code.substring(prop.name.from, prop.name.to).trim(),
                 type: 'propertyName',
-                range: [base + prop.name[0], base + prop.value[1]]
+                range: {
+                    from: base + prop.name.from,
+                    to: base + prop.value.to
+                }
             });
             break;
         } else if (contains(prop.name, pos)) {
-            const end = prop.value ? prop.value[1] : prop.name[1];
+            const end = prop.value ? prop.value.to : prop.name.to;
             result.current = {
-                name: code.substring(prop.name[0], prop.name[1]).trim(),
+                name: code.substring(prop.name.from, prop.name.to).trim(),
                 type: 'propertyName',
-                range: [base + prop.name[0], base + end]
+                range: {
+                    from: base + prop.name.from,
+                    to: base + end
+                }
             };
             break;
         }
@@ -281,11 +290,11 @@ export function parseInlineProps(code: string, limit = code.length): InlineProp[
         const ch = code[i];
         if (prop) {
             if (prop.value) {
-                if (prop.value[0] !== -1) {
-                    prop.value[1] = i;
+                if (prop.value.from !== -1) {
+                    prop.value.to = i;
                 }
             } else {
-                prop.name[1] = i;
+                prop.name.to = i;
             }
         }
 
@@ -296,16 +305,16 @@ export function parseInlineProps(code: string, limit = code.length): InlineProp[
             }
         } else if (ch === ':') {
             if (prop && !prop.value) {
-                prop.value = [-1, -1];
+                prop.value = { from: -1, to: -1 };
             }
         } else {
             if (prop) {
-                if (prop.value?.[0] === -1 && !space.includes(ch)) {
-                    prop.value[0] = prop.value[1] = i;
+                if (prop.value?.from === -1 && !space.includes(ch)) {
+                    prop.value.from = prop.value.to = i;
                 }
             } else if (!space.includes(ch)) {
                 prop = {
-                    name: [i, i]
+                    name: { from: i, to: i }
                 };
                 propList.push(prop);
             }
@@ -315,9 +324,9 @@ export function parseInlineProps(code: string, limit = code.length): InlineProp[
     // Finalize state for trailing character
     if (prop) {
         if (prop.value) {
-            prop.value[1]++;
+            prop.value.to++;
         } else {
-            prop.name[1]++;
+            prop.name.to++;
         }
     }
 

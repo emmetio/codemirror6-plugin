@@ -3,7 +3,7 @@ import type { EditorState, SelectionRange, StateCommand } from '@codemirror/stat
 import { EditorSelection } from '@codemirror/state';
 import { cssLanguage } from '@codemirror/lang-css';
 import type { SyntaxNode, TreeCursor } from '@lezer/common';
-import type { RangeObject, StateCommandTarget, TextRange } from '../lib/types';
+import type { RangeObject, StateCommandTarget } from '../lib/types';
 import { fullCSSDeclarationRange, isQuote, isSpace, rangeContains, substr } from '../lib/utils';
 import { getPropertyRanges, getSelectorRange } from '../lib/context';
 
@@ -144,7 +144,7 @@ function getCSSCandidates(state: EditorState, node: SyntaxNode): RangeObject[] {
     let result: RangeObject[] = [];
     if (node.name === 'RuleSet') {
         const selector = getSelectorRange(node);
-        result.push(toRangeObj(selector));
+        result.push(selector);
         const block = node.getChild('Block');
         if (block) {
             for (const child of block.getChildren('Declaration')) {
@@ -154,8 +154,8 @@ function getCSSCandidates(state: EditorState, node: SyntaxNode): RangeObject[] {
     } else if (node.name === 'Declaration') {
         result.push(fullCSSDeclarationRange(node));
         const { name, value } = getPropertyRanges(node);
-        name && result.push(toRangeObj(name));
-        value && result.push(toRangeObj(value));
+        name && result.push(name);
+        value && result.push(value);
     }
 
     return result;
@@ -241,12 +241,4 @@ function findRange(sel: SelectionRange, ranges: RangeObject[], reverse = false):
     }
 
     return !needNext ? candidate : undefined;
-}
-
-
-function toRangeObj(range: TextRange): RangeObject {
-    return {
-        from: range[0],
-        to: range[1]
-    };
 }

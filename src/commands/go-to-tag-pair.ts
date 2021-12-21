@@ -14,9 +14,9 @@ export const goToTagPair: StateCommand = ({ state, dispatch }) => {
             if (ctx && ctx.open && ctx.close) {
                 found = true;
                 const { open, close } = ctx;
-                const nextPos = open[0] <= pos && pos < open[1]
-                    ? close[0]
-                    : open[0];
+                const nextPos = open.from <= pos && pos < open.to
+                    ? close.from
+                    : open.from;
                 nextSel = EditorSelection.cursor(nextPos);
             }
         }

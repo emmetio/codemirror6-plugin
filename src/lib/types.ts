@@ -1,16 +1,17 @@
-import type { UserConfig } from 'emmet';
+import type { AbbreviationContext, UserConfig } from 'emmet';
 import type { EditorState, Transaction } from '@codemirror/state';
 
 export type CSSTokenType = 'selector' | 'propertyName' | 'propertyValue';
-
-export type TextRange = [number, number];
 
 export interface RangeObject {
     from: number;
     to: number;
 }
 
-export type RangeType = RangeObject | TextRange;
+export interface ContextTag extends AbbreviationContext {
+    open: RangeObject;
+    close?: RangeObject;
+}
 
 export interface CSSMatch {
     /** CSS selector, property or section name */
@@ -18,7 +19,7 @@ export interface CSSMatch {
     /** Type of ancestor element */
     type: CSSTokenType;
     /** Range of selector or section (just name, not entire block) */
-    range: TextRange;
+    range: RangeObject;
 }
 
 export interface CSSContext<M = CSSMatch> {
@@ -37,7 +38,7 @@ export interface CSSContext<M = CSSMatch> {
      * If current CSS context is embedded into HTML, this property contains
      * range of CSS source in original content
      */
-    embedded?: TextRange;
+    embedded?: RangeObject;
 }
 
 export type HTMLType = 'open' | 'close' | 'selfClose';
@@ -56,7 +57,7 @@ export interface HTMLAncestor {
     /** Element name */
     name: string;
     /** Range of element’s open tag in source code */
-    range: TextRange;
+    range: RangeObject;
 }
 
 export interface HTMLMatch {
@@ -65,7 +66,7 @@ export interface HTMLMatch {
     /** Element type */
     type: HTMLType;
     /** Range of matched element in source code */
-    range: TextRange;
+    range: RangeObject;
 }
 
 export interface StateCommandTarget {

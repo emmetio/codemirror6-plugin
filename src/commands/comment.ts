@@ -35,6 +35,7 @@ function toggleHTMLComment(state: EditorState, pos: number): ChangeSpec[] {
     let result: ChangeSpec[] = [];
     const ctx = getContextOfType(state, pos, ['Element', 'Comment']);
     if (ctx) {
+        console.log('got context', ctx);
         if (ctx.name === 'Comment') {
             result = result.concat(stripComment(state, ctx, htmlComment))
         } else {
@@ -73,10 +74,13 @@ function getContextOfType(state: EditorState, pos: number, types: string[]): Syn
 }
 
 function stripComment(state: EditorState, node: SyntaxNode, comment: CommentTokens): ChangeSpec[] {
-    const innerRange = narrowToNonSpace(state, [node.from + comment[0].length, node.to - comment[1].length]);
+    const innerRange = narrowToNonSpace(state, {
+        from: node.from + comment[0].length,
+        to: node.to - comment[1].length
+    });
     return [
-        { from: node.from, to: innerRange[0] },
-        { from: innerRange[1], to: node.to },
+        { from: node.from, to: innerRange.from },
+        { from: innerRange.to, to: node.to },
     ];
 }
 

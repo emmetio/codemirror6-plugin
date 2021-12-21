@@ -32,8 +32,8 @@ export const expandAbbreviation: StateCommand = ({ state, dispatch }) => {
                 insert: snippet
             }],
             selection: {
-                head: nextSel[0],
-                anchor: nextSel[1]
+                head: nextSel.from,
+                anchor: nextSel.to
             }
         });
         dispatch(transaction);

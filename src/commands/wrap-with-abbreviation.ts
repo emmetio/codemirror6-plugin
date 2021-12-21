@@ -4,9 +4,8 @@ import { EditorState, StateEffect, StateField } from '@codemirror/state';
 import type { Extension, StateCommand, } from '@codemirror/state';
 import { undo } from '@codemirror/history';
 import { expand, getOptions, getTagContext } from '../lib/emmet';
-import type { ContextTag } from '../lib/emmet';
 import { getSelectionsFromSnippet, narrowToNonSpace, rangeEmpty, substr } from '../lib/utils';
-import type { RangeObject, TextRange } from '../lib/types';
+import type { RangeObject, ContextTag } from '../lib/types';
 import { lineIndent } from '../lib/output';
 
 interface WrapAbbreviation {
@@ -117,8 +116,8 @@ const wrapWithAbbreviationPlugin = ViewPlugin.fromClass(class WrapWithAbbreviati
                             insert: snippet
                         }],
                         selection: {
-                            head: nextSel[0],
-                            anchor: nextSel[1]
+                            head: nextSel.from,
+                            anchor: nextSel.to
                         }
                     });
                 } else {
@@ -186,25 +185,21 @@ function getWrapRange(editor: EditorState, range: RangeObject, context?: Context
 
         if (inRange(open, pos) || (close && inRange(close, pos))) {
             return {
-                from: open[0],
-                to: close ? close[1] : open[1]
+                from: open.from,
+                to: close ? close.to : open.to
             };
         }
 
         if (close) {
-            const r = narrowToNonSpace(editor, [open[1], close[0]]);
-            return {
-                from: r[0],
-                to: r[1]
-            };
+            return narrowToNonSpace(editor, { from: open.to, to: close.from });
         }
     }
 
     return range;
 }
 
-function inRange(range: TextRange, pt: number): boolean {
-    return range[0] < pt && pt < range[1];
+function inRange(range: RangeObject, pt: number): boolean {
+    return range.from < pt && pt < range.to;
 }
 
 /**

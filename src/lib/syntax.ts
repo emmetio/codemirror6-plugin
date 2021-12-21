@@ -148,7 +148,7 @@ export function isJSX(syntax?: string): boolean {
 export function getMarkupAbbreviationContext(state: EditorState, ctx: HTMLContext): AbbreviationContext | undefined {
     const parent = last(ctx.ancestors);
     if (parent) {
-        let node: SyntaxNode | null = syntaxTree(state).resolve(parent.range[0], 1);
+        let node: SyntaxNode | null = syntaxTree(state).resolve(parent.range.from, 1);
         while (node && node.name !== 'OpenTag') {
             node = node.parent;
         }
