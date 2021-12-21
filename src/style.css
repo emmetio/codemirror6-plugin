@@ -8,3 +8,27 @@
     margin-top: 1.6em;
     font-size: 0.8em;
 }
+
+.emmet-wrap-with-abbreviation {
+    position: absolute;
+    top: 0;
+    z-index: 2;
+    width: 100%;
+}
+
+.emmet-wrap-with-abbreviation__content {
+    background: #fff;
+    margin: 0 auto;
+    padding: 5px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 30em;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.emmet-wrap-with-abbreviation__content input {
+    width: 100%;
+    box-sizing: border-box;
+}

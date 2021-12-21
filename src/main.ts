@@ -14,6 +14,7 @@ import { incrementNumber1, decrementNumber1 } from './commands/inc-dec-number';
 import { removeTag } from './commands/remove-tag';
 import { selectNextItem, selectPreviousItem } from './commands/select-item';
 import { splitJoinTag } from './commands/split-join-tag';
+import { wrapWithAbbreviation } from './commands/wrap-with-abbreviation';
 
 const text = `<html style="color: green">
   <!-- this is a comment -->
@@ -58,6 +59,7 @@ let view = new EditorView({
             basicSetup,
             html(),
             createTracker(),
+            wrapWithAbbreviation(),
             underlineTheme,
             keymap.of([{
                 key: 'Cmd-e',
