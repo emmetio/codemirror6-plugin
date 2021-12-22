@@ -1,10 +1,9 @@
 import type { MarkupAbbreviation, StylesheetAbbreviation, UserConfig } from 'emmet';
 import { stylesheetAbbreviation, markupAbbreviation } from 'emmet';
-import { ViewUpdate, ViewPlugin, Decoration, keymap } from '@codemirror/view';
-import type { DecorationSet, Command } from '@codemirror/view';
-import { EditorState, StateEffect, StateField, Transaction } from '@codemirror/state';
-import type { StateCommand } from '@codemirror/state';
-import type { Extension } from '@codemirror/state';
+import { ViewPlugin, Decoration, keymap, EditorView } from '@codemirror/view';
+import type { DecorationSet, Command, ViewUpdate } from '@codemirror/view';
+import { StateEffect, StateField } from '@codemirror/state';
+import type { EditorState, Extension, StateCommand, Transaction } from '@codemirror/state';
 import type { Range } from '@codemirror/rangeset';
 import { htmlLanguage } from '@codemirror/lang-html';
 import { cssLanguage } from '@codemirror/lang-css';
@@ -60,7 +59,7 @@ export interface AbbreviationTrackerError extends AbbreviationTrackerBase {
 
 export const JSX_PREFIX = '<';
 
-const underlineMark = Decoration.mark({ class: 'cm-underline' });
+const underlineMark = Decoration.mark({ class: 'emmet-tracker' });
 
 const resetTracker = StateEffect.define();
 const forceTracker = StateEffect.define();
@@ -180,10 +179,37 @@ const escKeyHandler: Command = ({ state, dispatch }) => {
     return false;
 };
 
+const trackerTheme = EditorView.baseTheme({
+    '.emmet-tracker': {
+        textDecoration: 'underline 1px green',
+    },
+    '.emmet-preview': {
+        position: 'absolute',
+        boxShadow: '2px 2px 10px rgba(0, 0, 0, 0.3)',
+        borderRadius: '3px',
+        background: '#fff',
+        display: 'inline-block',
+        marginLeft: '-5px',
+        marginTop: '1.6em',
+        fontSize: '0.8em'
+    },
+    '.emmet-preview_error': {
+        color: 'red'
+    }
+});
+
+/**
+ * A factory function that creates abbreviation tracker for known syntaxes.
+ * When user starts typing, it detects whether user writes abbreviation and
+ * if so, starts tracking by displaying an underline. Then if user hit Tab key
+ * when cursor is inside tracked abbreviation, it will expand it. Or user can
+ * press Escape key to reset tracker
+ */
 export default function tracker(): Extension[] {
     return [
         trackerField,
         abbreviationTracker,
+        trackerTheme,
         keymap.of([{
             key: 'Tab',
             run: tabKeyHandler

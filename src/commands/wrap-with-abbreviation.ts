@@ -1,5 +1,6 @@
 import type { UserConfig } from 'emmet';
-import { EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view';
+import { EditorView, keymap, ViewPlugin } from '@codemirror/view';
+import type { ViewUpdate } from '@codemirror/view';
 import { EditorState, StateEffect, StateField } from '@codemirror/state';
 import type { Extension, StateCommand, } from '@codemirror/state';
 import { undo } from '@codemirror/history';
@@ -26,6 +27,30 @@ const wrapAbbreviationField = StateField.define<WrapAbbreviation | null>({
             }
         }
         return value;
+    }
+});
+
+const wrapTheme = EditorView.baseTheme({
+    '.emmet-wrap-with-abbreviation': {
+        position: 'absolute',
+        top: 0,
+        zIndex: 2,
+        width: '100%'
+    },
+    '.emmet-wrap-with-abbreviation__content': {
+        background: '#fff',
+        margin: '0 auto',
+        padding: '5px',
+        boxSizing: 'border-box',
+        width: '100%',
+        maxWidth: '30em',
+        borderBottomLeftRadius: '5px',
+        borderBottomRightRadius: '5px',
+        boxShadow: '0 3px 10px rgba(0, 0, 0, 0.3)',
+    },
+    '.emmet-wrap-with-abbreviation__content input': {
+        width: '100%',
+        boxSizing: 'border-box'
     }
 });
 
@@ -162,12 +187,13 @@ const wrapWithAbbreviationPlugin = ViewPlugin.fromClass(class WrapWithAbbreviati
     }
 });
 
-export function wrapWithAbbreviation(): Extension[] {
+export function wrapWithAbbreviation(key = 'Ctrl-w'): Extension[] {
     return [
         wrapAbbreviationField,
         wrapWithAbbreviationPlugin,
+        wrapTheme,
         keymap.of([{
-            key: 'Ctrl-w',
+            key,
             run: enterWrapWithAbbreviation
         }])
     ];

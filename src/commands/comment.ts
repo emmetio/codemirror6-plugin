@@ -1,4 +1,5 @@
-import { LRLanguage, syntaxTree } from '@codemirror/language';
+import { syntaxTree } from '@codemirror/language';
+import type { LRLanguage } from '@codemirror/language';
 import { htmlLanguage } from '@codemirror/lang-html';
 import { cssLanguage } from '@codemirror/lang-css';
 import type { ChangeSpec, EditorState, StateCommand } from '@codemirror/state';

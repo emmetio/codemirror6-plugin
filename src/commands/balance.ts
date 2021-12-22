@@ -1,6 +1,6 @@
 import { syntaxTree } from '@codemirror/language';
-import { EditorSelection, SelectionRange } from '@codemirror/state';
-import type { EditorState, StateCommand } from '@codemirror/state';
+import { EditorSelection } from '@codemirror/state';
+import type { EditorState, SelectionRange, StateCommand } from '@codemirror/state';
 import { cssLanguage } from '@codemirror/lang-css';
 import { htmlLanguage } from '@codemirror/lang-html';
 import type { SyntaxNode } from '@lezer/common';

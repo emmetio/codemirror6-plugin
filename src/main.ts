@@ -1,20 +1,13 @@
-import './style.css'
-
 import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
 import { html } from '@codemirror/lang-html';
 import { keymap } from '@codemirror/view';
-import { expandAbbreviation } from './plugin';
-import createTracker, { enterAbbreviationMode } from './tracker';
-import { balanceOutward, balanceInward } from './commands/balance';
-import { toggleComment } from './commands/comment';
-import { evaluateMath } from './commands/evaluate-math';
-import { goToNextEditPoint, goToPreviousEditPoint } from './commands/go-to-edit-point';
-import { goToTagPair } from './commands/go-to-tag-pair';
-import { incrementNumber1, decrementNumber1 } from './commands/inc-dec-number';
-import { removeTag } from './commands/remove-tag';
-import { selectNextItem, selectPreviousItem } from './commands/select-item';
-import { splitJoinTag } from './commands/split-join-tag';
-import { wrapWithAbbreviation } from './commands/wrap-with-abbreviation';
+
+import {
+    abbreviationTracker, expandAbbreviation,
+    enterAbbreviationMode, balanceOutward, toggleComment, evaluateMath,
+    goToNextEditPoint, goToPreviousEditPoint, goToTagPair, incrementNumber1, decrementNumber1,
+    removeTag, selectNextItem, selectPreviousItem, splitJoinTag, wrapWithAbbreviation
+} from './plugin';
 
 const text = `<html style="color: green">
   <!-- this is a comment -->
@@ -46,21 +39,14 @@ const text = `<html style="color: green">
   </body>
 </html>`;
 
-const underlineTheme = EditorView.baseTheme({
-    '.cm-underline': {
-        textDecoration: 'underline 1px green',
-    }
-});
-
-let view = new EditorView({
+new EditorView({
     state: EditorState.create({
         doc: text,
         extensions: [
             basicSetup,
             html(),
-            createTracker(),
+            abbreviationTracker(),
             wrapWithAbbreviation(),
-            underlineTheme,
             keymap.of([{
                 key: 'Cmd-e',
                 run: expandAbbreviation

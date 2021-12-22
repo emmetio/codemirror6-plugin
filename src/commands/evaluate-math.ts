@@ -1,5 +1,5 @@
-import { EditorSelection, SelectionRange } from '@codemirror/state';
-import type { ChangeSpec, StateCommand } from '@codemirror/state';
+import { EditorSelection } from '@codemirror/state';
+import type { ChangeSpec, SelectionRange, StateCommand } from '@codemirror/state';
 import evaluate, { extract } from '@emmetio/math-expression';
 
 export const evaluateMath: StateCommand = ({ state, dispatch }) => {
