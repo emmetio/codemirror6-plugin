@@ -17,5 +17,7 @@ export default defineConfig(({ command }) => {
                 }
             }
         };
+    } else {
+        return {};
     }
 });
