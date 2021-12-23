@@ -7,11 +7,12 @@ import type { EditorState, Extension, StateCommand, Transaction } from '@codemir
 import type { Range } from '@codemirror/rangeset';
 import { htmlLanguage } from '@codemirror/lang-html';
 import { cssLanguage } from '@codemirror/lang-css';
+import { snippet } from '@codemirror/autocomplete';
 import { getCSSContext, getHTMLContext } from '../lib/context';
 import { docSyntax, getMarkupAbbreviationContext, getStylesheetAbbreviationContext, getSyntaxType, isCSS, isHTML, isJSX, isSupported } from '../lib/syntax';
 import getOutputOptions from '../lib/output';
 import type { CSSContext, AbbreviationError, StartTrackingParams, RangeObject } from '../lib/types';
-import { contains, getCaret, getSelectionsFromSnippet, rangeEmpty, substr } from '../lib/utils';
+import { contains, getCaret, rangeEmpty, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
 import AbbreviationPreviewWidget from './AbbreviationPreviewWidget';
 
@@ -147,21 +148,8 @@ const tabKeyHandler: Command = ({ state, dispatch }) => {
     if (tracker && contains(tracker.range, getCaret(state))) {
         const { from, to } = tracker.range;
         const expanded = expand(tracker.abbreviation, tracker.config);
-        const { ranges, snippet } = getSelectionsFromSnippet(expanded, from);
-        const nextSel = ranges[0];
-
-        dispatch({
-            effects: resetTracker.of(null),
-            changes: [{
-                from,
-                to,
-                insert: snippet
-            }],
-            selection: {
-                head: nextSel.from,
-                anchor: nextSel.to
-            }
-        });
+        const fn = snippet(expanded);
+        fn({ state, dispatch }, { label: 'expand' }, from, to);
         return true;
     }
     return false;
@@ -287,7 +275,7 @@ function typingAbbreviation(state: EditorState, pos: number, input: string): Abb
  * This method ensures that given `pos` is inside location allowed for expanding
  * abbreviations and returns context data about it.
  */
-function getActivationContext(state: EditorState, pos: number): UserConfig | undefined {
+export function getActivationContext(state: EditorState, pos: number): UserConfig | undefined {
     if (cssLanguage.isActiveAt(state, pos)) {
         return getCSSActivationContext(state, pos, 'css', getCSSContext(state, pos));
     }
@@ -475,6 +463,10 @@ function previewField(_: number, placeholder: string) {
 
 function handleUpdate(state: EditorState, tracker: AbbreviationTracker | null, update: Transaction): AbbreviationTracker | null {
     if (!tracker) {
+        if (hasSnippet(state)) {
+            return null;
+        }
+
         // Start abbreviation tracking
         update.changes.iterChanges((_fromA, _toA, fromB, _toB, text) => {
             if (text.length) {
@@ -525,4 +517,16 @@ function getSyntaxFromPos(state: EditorState, pos: number): string {
 
 function canStartStarting(prefix: string, input: string, syntax: string) {
     return isValidPrefix(prefix, syntax) && isValidAbbreviationStart(input, syntax);
+}
+
+/**
+ * It’s a VERY hacky way to detect if snippet is currently active in given state.
+ * Should ask package authors how to properly detect it
+ */
+function hasSnippet(state: any): boolean {
+    if (Array.isArray(state.values)) {
+        return state.values.some((item: any) => item && item.constructor?.name === 'ActiveSnippet');
+    }
+
+    return false;
 }

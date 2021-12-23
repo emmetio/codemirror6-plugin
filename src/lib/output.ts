@@ -10,9 +10,11 @@ export default function getOutputOptions(state: EditorState, pos: number, inline
     const config = getEmmetConfig();
 
     const opt: Partial<Options> = {
-        'output.baseIndent': lineIndent(state.doc.lineAt(pos)),
-        'output.indent': getIndentation(state),
-        'output.field': field(),
+        // 'output.baseIndent': lineIndent(state.doc.lineAt(pos)),
+        // 'output.indent': getIndentation(state),
+        // 'output.field': field(),
+        'output.indent': '\t',
+        'output.field': (index, placeholder) => (placeholder ? `\${${index}:${placeholder}}` : `\${${index}}`),
         'output.format': !inline,
         'output.attributeQuotes': config.attributeQuotes,
         'stylesheet.shortHex': config.shortHex
