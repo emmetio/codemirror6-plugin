@@ -7,13 +7,13 @@ export default defineConfig(({ command }) => {
                 target: 'esnext',
                 sourcemap: true,
                 minify: false,
+                lib: {
+                    entry: './src/plugin.ts',
+                    formats: ['es'],
+                    fileName: () => 'plugin.js'
+                },
                 rollupOptions: {
-                    input: './src/plugin.ts',
                     external: /^@(codemirror|lezer)\//,
-                    output: {
-                        manualChunks: {},
-                        entryFileNames: '[name].js'
-                    }
                 }
             }
         };
