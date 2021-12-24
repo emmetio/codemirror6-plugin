@@ -28,7 +28,7 @@ export const JSX_PREFIX = '<';
 export function expand(abbr: string | MarkupAbbreviation | StylesheetAbbreviation, config?: UserConfig) {
     let opt: UserConfig = { cache };
     const outputOpt: Partial<Options> = {
-        'output.field': field(),
+        'output.field': field,
     };
 
     if (config) {
@@ -121,7 +121,7 @@ export function getOptions(state: EditorState, pos: number): UserConfig {
     const config: UserConfig = {
         type: info.type,
         syntax: info.syntax || 'html',
-        options: getOutputOptions(state, pos, info.inline)
+        options: getOutputOptions(state, info.inline)
     };
 
     if (context) {

@@ -2,19 +2,17 @@ import type { Options } from 'emmet';
 import type { EditorState } from '@codemirror/state';
 import type { Line } from '@codemirror/text';
 import getEmmetConfig from './config';
-import { tabStopStart, tabStopEnd } from './utils';
 import { isHTML, docSyntax } from './syntax';
 
-export default function getOutputOptions(state: EditorState, pos: number, inline?: boolean): Partial<Options> {
+export default function getOutputOptions(state: EditorState, inline?: boolean): Partial<Options> {
     const syntax = docSyntax(state) || 'html';
     const config = getEmmetConfig();
 
     const opt: Partial<Options> = {
         // 'output.baseIndent': lineIndent(state.doc.lineAt(pos)),
         // 'output.indent': getIndentation(state),
-        // 'output.field': field(),
+        'output.field': field,
         'output.indent': '\t',
-        'output.field': (index, placeholder) => (placeholder ? `\${${index}:${placeholder}}` : `\${${index}}`),
         'output.format': !inline,
         'output.attributeQuotes': config.attributeQuotes,
         'stylesheet.shortHex': config.shortHex
@@ -42,18 +40,8 @@ export default function getOutputOptions(state: EditorState, pos: number, inline
 /**
  * Produces tabstop for CodeMirror editor
  */
-export function field() {
-    let handled = -1;
-    return (index: number, placeholder: string) => {
-        if (handled === -1 || handled === index) {
-            handled = index;
-            return placeholder
-                ? tabStopStart + placeholder + tabStopEnd
-                : tabStopStart;
-        }
-
-        return placeholder || '';
-    }
+export function field(index: number, placeholder?: string) {
+    return placeholder ? `\${${index}:${placeholder}}` : `\${${index}}`;
 }
 
 /**

@@ -294,14 +294,14 @@ export function getActivationContext(state: EditorState, pos: number): UserConfi
                 syntax,
                 type: 'markup',
                 context: getMarkupAbbreviationContext(state, ctx),
-                options: getOutputOptions(state, pos)
+                options: getOutputOptions(state)
             };
         }
     } else {
         return {
             syntax,
             type: getSyntaxType(syntax),
-            options: getOutputOptions(state, pos)
+            options: getOutputOptions(state)
         };
     }
 
@@ -319,7 +319,7 @@ function getCSSActivationContext(state: EditorState, pos: number, syntax: string
             syntax,
             type: 'stylesheet',
             context: getStylesheetAbbreviationContext(ctx),
-            options: getOutputOptions(state, pos, ctx.inline)
+            options: getOutputOptions(state, ctx.inline)
         };
     }
 
