@@ -15,6 +15,8 @@ import type { CSSContext, AbbreviationError, StartTrackingParams, RangeObject } 
 import { contains, getCaret, rangeEmpty, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
 import AbbreviationPreviewWidget from './AbbreviationPreviewWidget';
+import { config } from './config';
+import type { EmmetConfig } from './config';
 
 type AbbreviationTracker = AbbreviationTrackerValid | AbbreviationTrackerError;
 
@@ -115,6 +117,7 @@ const abbreviationTracker = ViewPlugin.fromClass(class {
 
         if (tracker) {
             const { range } = tracker;
+            const options = state.facet(config);
 
             if (!rangeEmpty(range)) {
                 decors.push(underlineMark.range(range.from, range.to));
@@ -122,14 +125,14 @@ const abbreviationTracker = ViewPlugin.fromClass(class {
 
             if (tracker.type === 'abbreviation' && (!tracker.simple || tracker.forced) && tracker.abbreviation && contains(range, getCaret(state))) {
                 const preview = Decoration.widget({
-                    widget: new AbbreviationPreviewWidget(tracker.preview, tracker.config.syntax || 'html'),
+                    widget: new AbbreviationPreviewWidget(tracker.preview, tracker.config.syntax || 'html', options.preview),
                     side: 1
                 });
                 decors.push(preview.range(range.from));
             } else if (tracker.type === 'error' && tracker.forced) {
                 const errMessage = `↑\n${tracker.error.message}`;
                 const preview = Decoration.widget({
-                    widget: new AbbreviationPreviewWidget(errMessage, 'error'),
+                    widget: new AbbreviationPreviewWidget(errMessage, 'error', options.preview),
                     side: 1
                 });
                 decors.push(preview.range(range.from + tracker.error.pos));
@@ -193,11 +196,12 @@ const trackerTheme = EditorView.baseTheme({
  * when cursor is inside tracked abbreviation, it will expand it. Or user can
  * press Escape key to reset tracker
  */
-export default function tracker(): Extension[] {
+export default function tracker(options?: Partial<EmmetConfig>): Extension[] {
     return [
         trackerField,
         abbreviationTracker,
         trackerTheme,
+        options ? config.of(options) : [],
         keymap.of([{
             key: 'Tab',
             run: tabKeyHandler
