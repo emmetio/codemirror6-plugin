@@ -1,10 +1,10 @@
 import { EditorState } from '@codemirror/state';
+import type { Extension } from '@codemirror/state';
 import { WidgetType, EditorView } from '@codemirror/view';
 import { defaultHighlightStyle } from '@codemirror/highlight';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
-import type { EmmetPreviewConfig, LangOrLangFactory } from './config';
-import type { LanguageSupport } from '@codemirror/language';
+import type { EmmetPreviewConfig, PreviewExtensions } from './config';
 
 interface HTMLElementWithView extends HTMLElement {
     view?: EditorView;
@@ -47,7 +47,7 @@ export default class AbbreviationPreviewWidget extends WidgetType {
                 doc: this.value,
                 extensions: [
                     defaultHighlightStyle.fallback,
-                    this.getLang()
+                    this.getExtensions()
                 ]
             }),
             parent: elem
@@ -55,13 +55,13 @@ export default class AbbreviationPreviewWidget extends WidgetType {
         return elem;
     }
 
-    private getLang(): LanguageSupport {
-        let lang: LangOrLangFactory = this.syntax === 'css' ? css : html;
+    private getExtensions(): Extension {
+        let ext: PreviewExtensions = this.syntax === 'css' ? css : html;
 
         if (this.options && this.syntax in this.options) {
-            lang = this.options[this.syntax as keyof EmmetPreviewConfig]!;
+            ext = this.options[this.syntax as keyof EmmetPreviewConfig]!;
         }
 
-        return typeof lang === 'function' ? lang() : lang;
+        return ext();
     }
 }

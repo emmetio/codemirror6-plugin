@@ -1,13 +1,13 @@
 import { Facet } from '@codemirror/state';
-import type { LanguageSupport } from '@codemirror/language';
+import type { Extension } from '@codemirror/state';
 
-export type LangOrLangFactory = LanguageSupport | (() => LanguageSupport);
+export type PreviewExtensions = () => Extension;
 
 export interface EmmetPreviewConfig {
-    /** Language definition for displaying HTML-like abbreviation preview  */
-    html?: LangOrLangFactory;
-    /** Language definition for displaying CSS-like abbreviation preview  */
-    css?: LangOrLangFactory;
+    /** Extensions factory for displaying HTML-like abbreviation preview  */
+    html?: PreviewExtensions;
+    /** Extensions factory for displaying CSS-like abbreviation preview  */
+    css?: PreviewExtensions;
 }
 
 export interface EmmetConfig {
