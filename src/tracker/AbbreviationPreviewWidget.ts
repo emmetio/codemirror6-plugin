@@ -47,6 +47,7 @@ export default class AbbreviationPreviewWidget extends WidgetType {
                 doc: this.value,
                 extensions: [
                     defaultHighlightStyle.fallback,
+                    this.syntax === 'css' ? css() : html(),
                     this.getExtensions()
                 ]
             }),
