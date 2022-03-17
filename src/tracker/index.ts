@@ -17,6 +17,8 @@ import { contains, getCaret, rangeEmpty, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
 import AbbreviationPreviewWidget from './AbbreviationPreviewWidget';
 import icon from '../completion-icon.svg';
+import { config } from './config';
+import type { EmmetConfig } from './config';
 
 type AbbreviationTracker = AbbreviationTrackerValid | AbbreviationTrackerError;
 
@@ -60,6 +62,9 @@ interface AbbreviationTrackerBase {
      */
     forced: boolean;
 
+    /** Indicates that current tracker shouldn’t be displayed in editor */
+    inactive: boolean;
+
     /**
      * Relative offset from range start where actual abbreviation starts.
      * Used tp handle prefixes in abbreviation
@@ -89,7 +94,7 @@ export interface AbbreviationTrackerError extends AbbreviationTrackerBase {
 
 export const JSX_PREFIX = '<';
 
-const underlineMark = Decoration.mark({ class: 'emmet-tracker' });
+const trackerMark = Decoration.mark({ class: 'emmet-tracker' });
 
 const resetTracker = StateEffect.define();
 const forceTracker = StateEffect.define();
@@ -144,22 +149,23 @@ const abbreviationTracker = ViewPlugin.fromClass(class {
 
         if (tracker) {
             const { range } = tracker;
+            const options = state.facet(config);
 
-            if (!rangeEmpty(range)) {
-                decors.push(underlineMark.range(range.from, range.to));
+            if (!rangeEmpty(range) && !tracker.inactive) {
+                decors.push(trackerMark.range(range.from, range.to));
             }
 
             if (canDisplayPreview(state, tracker)) {
                 // TODO use @codemirror/tooltip instead
                 const preview = Decoration.widget({
-                    widget: new AbbreviationPreviewWidget(tracker.preview, tracker.config.syntax || 'html'),
+                    widget: new AbbreviationPreviewWidget(tracker.preview, tracker.config.syntax || 'html', options.preview),
                     side: 1
                 });
                 decors.push(preview.range(range.from));
             } else if (tracker.type === 'error' && tracker.forced) {
                 const errMessage = `↑\n${tracker.error.message}`;
                 const preview = Decoration.widget({
-                    widget: new AbbreviationPreviewWidget(errMessage, 'error'),
+                    widget: new AbbreviationPreviewWidget(errMessage, 'error', options.preview),
                     side: 1
                 });
                 decors.push(preview.range(range.from + tracker.error.pos));
@@ -186,7 +192,7 @@ export function expandTracker({ state, dispatch }: StateCommandTarget, tracker: 
 
 const tabKeyHandler: Command = ({ state, dispatch }) => {
     const tracker = state.field(trackerField, false);
-    if (tracker && contains(tracker.range, getCaret(state))) {
+    if (tracker && !tracker.inactive && contains(tracker.range, getCaret(state))) {
         expandTracker({ state, dispatch }, tracker);
         return true;
     }
@@ -239,12 +245,13 @@ const trackerTheme = EditorView.baseTheme({
  * when cursor is inside tracked abbreviation, it will expand it. Or user can
  * press Escape key to reset tracker
  */
-export default function tracker(): Extension[] {
+export default function tracker(options?: Partial<EmmetConfig>): Extension[] {
     return [
         trackerField,
         abbreviationTracker,
         trackerTheme,
         cssCompletion,
+        options ? config.of(options) : [],
         keymap.of([{
             key: 'Tab',
             run: tabKeyHandler
@@ -441,6 +448,7 @@ function createTracker(state: EditorState, range: RangeObject, params: StartTrac
         range,
         config,
         forced: !!forced,
+        inactive: false,
         offset: params.offset || 0,
     }
 
@@ -510,43 +518,59 @@ function previewField(_: number, placeholder: string) {
 }
 
 function handleUpdate(state: EditorState, tracker: AbbreviationTracker | null, update: Transaction): AbbreviationTracker | null {
-    if (!tracker) {
-        if (hasSnippet(state)) {
-            return null;
-        }
+    if (hasSnippet(state)) {
+        return null;
+    }
 
+    if (!tracker || tracker.inactive) {
         // Start abbreviation tracking
         update.changes.iterChanges((_fromA, _toA, fromB, _toB, text) => {
             if (text.length) {
-                tracker = typingAbbreviation(state, fromB, text.toString());
+                tracker = typingAbbreviation(state, fromB, text.toString()) || tracker;
             }
         });
-    } else {
-        // Continue abbreviation tracking
-        update.changes.iterChanges((fromA, toA, fromB, toB, text) => {
-            if (!tracker) {
-                return;
-            }
 
-            const { range } = tracker;
-            if (!contains(range, fromA)) {
-                // Update is outside of abbreviation, reset
+        if (!tracker || !tracker.inactive) {
+            return tracker;
+        }
+    }
+
+    // Continue abbreviation tracking
+    update.changes.iterChanges((fromA, toA, fromB, toB, text) => {
+        if (!tracker) {
+            return;
+        }
+
+        const { range } = tracker;
+        if (!contains(range, fromA)) {
+            // Update is outside of abbreviation, reset it only if it’s not inactive
+            if (!tracker.inactive) {
                 tracker = null;
-            } else if (contains(range, fromB)) {
-                const removed = toA - fromA;
-                const inserted = toB - fromA;
-                const to = range.to + inserted - removed;
-                if (to <= range.from || hasInvalidChars(text.toString())) {
-                    tracker = null;
+            }
+        } else if (contains(range, fromB)) {
+            const removed = toA - fromA;
+            const inserted = toB - fromA;
+            const to = range.to + inserted - removed;
+            if (to <= range.from || hasInvalidChars(text.toString())) {
+                tracker = null;
+            } else {
+                const abbrRange = tracker.inactive ? range : { from: range.from, to };
+                const nextTracker = createTracker(state, abbrRange, {
+                    config: tracker.config,
+                    forced: tracker.forced
+                });
+
+                if (!nextTracker) {
+                    // Next tracker is empty mostly due to invalid abbreviation.
+                    // To allow users to fix error, keep previous tracker
+                    // instance as inactive
+                    tracker = { ...tracker, inactive: true };
                 } else {
-                    tracker = createTracker(state, { from: range.from, to }, {
-                        config: tracker.config,
-                        forced: tracker.forced
-                    });
+                    tracker = nextTracker;
                 }
             }
-        });
-    }
+        }
+    });
 
     return tracker;
 }
