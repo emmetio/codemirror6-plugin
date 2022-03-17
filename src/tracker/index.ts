@@ -2,12 +2,12 @@ import type { MarkupAbbreviation, StylesheetAbbreviation, UserConfig } from 'emm
 import { stylesheetAbbreviation, markupAbbreviation } from 'emmet';
 import { ViewPlugin, Decoration, keymap, EditorView } from '@codemirror/view';
 import type { DecorationSet, Command, ViewUpdate } from '@codemirror/view';
-import { StateEffect, StateField } from '@codemirror/state';
+import { Prec, StateEffect, StateField } from '@codemirror/state';
 import type { EditorState, Extension, StateCommand, Transaction } from '@codemirror/state';
 import type { Range } from '@codemirror/rangeset';
 import { htmlLanguage } from '@codemirror/lang-html';
 import { cssLanguage } from '@codemirror/lang-css';
-import { snippet, pickedCompletion } from '@codemirror/autocomplete';
+import { snippet, pickedCompletion, Completion } from '@codemirror/autocomplete';
 import type { CompletionSource } from '@codemirror/autocomplete';
 import { getCSSContext, getHTMLContext } from '../lib/context';
 import { docSyntax, getMarkupAbbreviationContext, getStylesheetAbbreviationContext, getSyntaxType, isCSS, isHTML, isJSX, isSupported } from '../lib/syntax';
@@ -23,31 +23,53 @@ import type { EmmetConfig } from './config';
 type AbbreviationTracker = AbbreviationTrackerValid | AbbreviationTrackerError;
 
 /// CSS property and value keyword completion source.
-const cssCompletionSource: CompletionSource = context => {
+// Проблема мигающего автокомплита в том, что он становится ActiveSource,
+// а не ActiveResult, из-за этого помечется как Pending и не обновляется на первый
+// проход.
+// Текущая реализация укладывается в нужную концепцию,
+// но проверка автокомплита обрабатывается раньше, чем обновляется трэкер.
+// Нужно найти способ обновить трэкер раньше, чем отработает код автокомплита
+const emmetCompletionSource: CompletionSource = context => {
     const tracker = context.state.field(trackerField);
     if (tracker?.type == 'abbreviation') {
         return {
             from: tracker.range.from,
             to: tracker.range.to,
-            filter: false,
-            options: [{
-                label: tracker.preview,
-                type: 'emmet',
-                boost: 99,
-                apply: (view, completion) => {
-                    expandTracker(view, tracker);
-                    view.dispatch({
-                        annotations: pickedCompletion.of(completion)
-                    });
-                }
-            }]
+            filter: true,
+            span: /.+/,
+            get options(): Completion[] {
+                console.log('get options', context.state.field(trackerField));
+
+                return [{
+                    label: tracker.preview,
+                    type: 'emmet',
+                    boost: 2,
+                    apply: (view, completion) => {
+                        expandTracker(view, tracker);
+                        view.dispatch({
+                            annotations: pickedCompletion.of(completion)
+                        });
+                    }
+                }];
+            },
+            // options: [{
+            //     label: tracker.preview,
+            //     type: 'emmet',
+            //     boost: 99,
+            //     apply: (view, completion) => {
+            //         expandTracker(view, tracker);
+            //         view.dispatch({
+            //             annotations: pickedCompletion.of(completion)
+            //         });
+            //     }
+            // }]
         };
     }
 
     return null;
 }
 
-const cssCompletion: Extension = cssLanguage.data.of({ autocomplete: cssCompletionSource });
+const cssCompletion: Extension = cssLanguage.data.of({ autocomplete: emmetCompletionSource });
 
 interface AbbreviationTrackerBase {
     /** Range in editor for abbreviation */
@@ -110,6 +132,8 @@ export const enterAbbreviationMode: StateCommand = ({ state, dispatch }) => {
 const trackerField = StateField.define<AbbreviationTracker | null>({
     create: () => null,
     update(value, tr) {
+        console.log('field tracker update', tr);
+
         for (const effect of tr.effects) {
             if (effect.is(resetTracker)) {
                 console.log('reset tracker');
@@ -144,6 +168,8 @@ const abbreviationTracker = ViewPlugin.fromClass(class {
 
     update(update: ViewUpdate) {
         const { state } = update;
+        console.log('view tracker update');
+
         const tracker = state.field(trackerField);
         const decors: Range<Decoration>[] = [];
 
@@ -248,7 +274,7 @@ const trackerTheme = EditorView.baseTheme({
 export default function tracker(options?: Partial<EmmetConfig>): Extension[] {
     return [
         trackerField,
-        abbreviationTracker,
+        Prec.high(abbreviationTracker),
         trackerTheme,
         cssCompletion,
         options ? config.of(options) : [],
