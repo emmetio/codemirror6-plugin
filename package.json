@@ -6,28 +6,28 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3009",
-    "build": "vite build && tsc",
+    "build": "tsc && vite build",
     "serve": "vite preview",
     "prepare": "npm run build"
   },
   "devDependencies": {
-    "@codemirror/basic-setup": "^0.19.0",
-    "typescript": "^4.3.2",
-    "vite": "^2.6.4"
+    "@codemirror/basic-setup": "^0.19.1",
+    "typescript": "^4.6.2",
+    "vite": "^2.8.6"
   },
   "dependencies": {
     "@emmetio/math-expression": "^1.0.4",
-    "emmet": "^2.3.4"
+    "emmet": "^2.3.6"
   },
   "peerDependencies": {
-    "@codemirror/autocomplete": "^0.19.9",
-    "@codemirror/highlight": "^0.19.6",
-    "@codemirror/history": "^0.19.0",
+    "@codemirror/autocomplete": "^0.19.14",
+    "@codemirror/highlight": "^0.19.7",
+    "@codemirror/history": "^0.19.2",
     "@codemirror/lang-css": "^0.19.3",
-    "@codemirror/lang-html": "^0.19.3",
-    "@codemirror/language": "^0.19.5",
-    "@codemirror/state": "^0.19.5",
-    "@codemirror/view": "^0.19.19",
+    "@codemirror/lang-html": "^0.19.4",
+    "@codemirror/language": "^0.19.8",
+    "@codemirror/state": "^0.19.9",
+    "@codemirror/view": "^0.19.47",
     "@lezer/common": "^0.15.11"
   }
 }
