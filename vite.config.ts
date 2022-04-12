@@ -4,7 +4,7 @@ export default defineConfig(({ command }) => {
     if (command === 'build') {
         return {
             build: {
-                target: 'esnext',
+                target: 'es2017',
                 sourcemap: true,
                 minify: false,
                 lib: {
