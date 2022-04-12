@@ -2,7 +2,7 @@ import type { MarkupAbbreviation, StylesheetAbbreviation, UserConfig } from 'emm
 import { stylesheetAbbreviation, markupAbbreviation } from 'emmet';
 import { ViewPlugin, Decoration, keymap, EditorView } from '@codemirror/view';
 import type { DecorationSet, Command, ViewUpdate } from '@codemirror/view';
-import { Prec, StateEffect, StateField } from '@codemirror/state';
+import { StateEffect, StateField } from '@codemirror/state';
 import type { EditorState, Extension, StateCommand, Transaction } from '@codemirror/state';
 import type { Range } from '@codemirror/rangeset';
 import { htmlLanguage } from '@codemirror/lang-html';
@@ -31,38 +31,40 @@ type AbbreviationTracker = AbbreviationTrackerValid | AbbreviationTrackerError;
 // Нужно найти способ обновить трэкер раньше, чем отработает код автокомплита
 const emmetCompletionSource: CompletionSource = context => {
     const tracker = context.state.field(trackerField);
-    if (tracker?.type == 'abbreviation') {
+    console.log('request completions', tracker, context);
+
+    if (tracker?.type === 'abbreviation') {
         return {
             from: tracker.range.from,
             to: tracker.range.to,
             filter: true,
-            span: /.+/,
-            get options(): Completion[] {
-                console.log('get options', context.state.field(trackerField));
+            span: /_+/,
+            // get options(): Completion[] {
+            //     console.log('get options', context.state.field(trackerField));
 
-                return [{
-                    label: tracker.preview,
-                    type: 'emmet',
-                    boost: 2,
-                    apply: (view, completion) => {
-                        expandTracker(view, tracker);
-                        view.dispatch({
-                            annotations: pickedCompletion.of(completion)
-                        });
-                    }
-                }];
-            },
-            // options: [{
-            //     label: tracker.preview,
-            //     type: 'emmet',
-            //     boost: 99,
-            //     apply: (view, completion) => {
-            //         expandTracker(view, tracker);
-            //         view.dispatch({
-            //             annotations: pickedCompletion.of(completion)
-            //         });
-            //     }
-            // }]
+            //     return [{
+            //         label: tracker.preview,
+            //         type: 'emmet',
+            //         boost: 2,
+            //         apply: (view, completion) => {
+            //             expandTracker(view, tracker);
+            //             view.dispatch({
+            //                 annotations: pickedCompletion.of(completion)
+            //             });
+            //         }
+            //     }];
+            // },
+            options: [{
+                label: tracker.preview,
+                type: 'emmet',
+                boost: 99,
+                apply: (view, completion) => {
+                    expandTracker(view, tracker);
+                    view.dispatch({
+                        annotations: pickedCompletion.of(completion)
+                    });
+                }
+            }]
         };
     }
 
@@ -153,9 +155,13 @@ const trackerField = StateField.define<AbbreviationTracker | null>({
         }
 
         if (!tr.docChanged) {
+            console.log('doc not changed', value);
             return value;
         }
-        return handleUpdate(tr.state, value, tr);
+        // return handleUpdate(tr.state, value, tr);
+        const nextValue = handleUpdate(tr.state, value, tr);
+        console.log('updated tracker', nextValue);
+        return nextValue;
     }
 });
 
@@ -274,7 +280,7 @@ const trackerTheme = EditorView.baseTheme({
 export default function tracker(options?: Partial<EmmetConfig>): Extension[] {
     return [
         trackerField,
-        Prec.high(abbreviationTracker),
+        abbreviationTracker,
         trackerTheme,
         cssCompletion,
         options ? config.of(options) : [],
