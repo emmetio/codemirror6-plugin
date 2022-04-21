@@ -1,7 +1,7 @@
 import { EditorState } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
 import { WidgetType, EditorView } from '@codemirror/view';
-import { defaultHighlightStyle } from '@codemirror/highlight';
+import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import type { EmmetPreviewConfig, PreviewExtensions } from './config';
@@ -46,7 +46,7 @@ export default class AbbreviationPreviewWidget extends WidgetType {
             state: EditorState.create({
                 doc: this.value,
                 extensions: [
-                    defaultHighlightStyle.fallback,
+                    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
                     this.syntax === 'css' ? css() : html(),
                     this.getExtensions()
                 ]

@@ -1,6 +1,5 @@
 import type { Options } from 'emmet';
-import type { EditorState } from '@codemirror/state';
-import type { Line } from '@codemirror/text';
+import type { EditorState, Line } from '@codemirror/state';
 import getEmmetConfig from './config';
 import { isHTML, docSyntax } from './syntax';
 

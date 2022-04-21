@@ -41,7 +41,8 @@ function selectItemCommand({ state, dispatch }: StateCommandTarget, reverse: boo
 }
 
 function getHTMLRange(state: EditorState, sel: SelectionRange, reverse?: boolean): RangeObject | undefined {
-    const { cursor } = getStartHTMLNode(state, sel);
+    const node = getStartHTMLNode(state, sel);
+    const cursor = node.cursor();
 
     do {
         if (cursor.name === 'OpenTag' || cursor.name === 'SelfClosingTag') {
@@ -57,7 +58,8 @@ function getHTMLRange(state: EditorState, sel: SelectionRange, reverse?: boolean
 }
 
 function getCSSRange(state: EditorState, sel: SelectionRange, reverse?: boolean) {
-    const { cursor } = getStartCSSNode(state, sel);
+    const node = getStartCSSNode(state, sel);
+    const cursor = node.cursor();
 
     do {
         const ranges = getCSSCandidates(state, cursor.node);

@@ -3,7 +3,7 @@ import { EditorView, keymap, ViewPlugin } from '@codemirror/view';
 import type { ViewUpdate } from '@codemirror/view';
 import { EditorState, StateEffect, StateField } from '@codemirror/state';
 import type { Extension, StateCommand, } from '@codemirror/state';
-import { undo } from '@codemirror/history';
+import { undo } from '@codemirror/commands';
 import { expand, getOptions, getTagContext } from '../lib/emmet';
 import { getSelectionsFromSnippet, narrowToNonSpace, rangeEmpty, substr } from '../lib/utils';
 import type { RangeObject, ContextTag } from '../lib/types';

@@ -216,7 +216,7 @@ function compactRanges(ranges: RangeObject[], inward: boolean): RangeObject[] {
 }
 
 function getChildOfType(node: SyntaxNode, types: string[]): SyntaxNode | null {
-    const cur = node.cursor;
+    const cur = node.cursor();
     if (cur.firstChild()) {
         for (;;) {
             for (const t of types) {
