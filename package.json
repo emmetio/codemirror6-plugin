@@ -1,6 +1,6 @@
 {
   "name": "@emmetio/codemirror6-plugin",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "main": "./dist/plugin.js",
   "types": "./dist/plugin.d.ts",
   "type": "module",
