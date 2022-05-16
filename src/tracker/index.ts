@@ -127,6 +127,12 @@ export const enterAbbreviationMode: StateCommand = ({ state, dispatch }) => {
 const trackerField = StateField.define<AbbreviationTracker | null>({
     create: () => null,
     update(value, tr) {
+        const hasCompletion = tr.annotation(pickedCompletion);
+        if (hasCompletion) {
+            // When completion is applied, always reset tracker
+            return null;
+        }
+
         for (const effect of tr.effects) {
             if (effect.is(resetTracker)) {
                 return null;
