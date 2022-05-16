@@ -6,7 +6,7 @@ import { StateEffect, StateField } from '@codemirror/state';
 import type { Range, EditorState, Extension, StateCommand, Transaction } from '@codemirror/state';
 import { htmlLanguage } from '@codemirror/lang-html';
 import { cssLanguage } from '@codemirror/lang-css';
-import { snippet, pickedCompletion, Completion } from '@codemirror/autocomplete';
+import { snippet, pickedCompletion, completionStatus, type CompletionResult, type Completion } from '@codemirror/autocomplete';
 import type { CompletionSource } from '@codemirror/autocomplete';
 import { getCSSContext, getHTMLContext } from '../lib/context';
 import { docSyntax, getMarkupAbbreviationContext, getStylesheetAbbreviationContext, getSyntaxType, isCSS, isHTML, isJSX, isSupported } from '../lib/syntax';
@@ -14,10 +14,16 @@ import getOutputOptions from '../lib/output';
 import type { CSSContext, AbbreviationError, StartTrackingParams, RangeObject, StateCommandTarget } from '../lib/types';
 import { contains, getCaret, rangeEmpty, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
-import AbbreviationPreviewWidget from './AbbreviationPreviewWidget';
+import AbbreviationPreviewWidget, { type HTMLElementPreview, createPreview } from './AbbreviationPreviewWidget';
 import icon from '../completion-icon.svg';
-import { config } from './config';
+import { config, EmmetPreviewConfig } from './config';
 import type { EmmetConfig } from './config';
+
+interface EmmetCompletion extends Completion {
+    tracker: AbbreviationTrackerValid;
+    previewConfig: EmmetPreviewConfig;
+    preview?: HTMLElementPreview;
+}
 
 type AbbreviationTracker = AbbreviationTrackerValid | AbbreviationTrackerError;
 
@@ -36,35 +42,27 @@ const emmetCompletionSource: CompletionSource = context => {
         return {
             from: tracker.range.from,
             to: tracker.range.to,
-            filter: true,
-            span: /_+/,
-            // get options(): Completion[] {
-            //     console.log('get options', context.state.field(trackerField));
-
-            //     return [{
-            //         label: tracker.preview,
-            //         type: 'emmet',
-            //         boost: 2,
-            //         apply: (view, completion) => {
-            //             expandTracker(view, tracker);
-            //             view.dispatch({
-            //                 annotations: pickedCompletion.of(completion)
-            //             });
-            //         }
-            //     }];
-            // },
-            options: [{
-                label: tracker.preview,
-                type: 'emmet',
-                boost: 99,
-                apply: (view, completion) => {
-                    expandTracker(view, tracker);
-                    view.dispatch({
-                        annotations: pickedCompletion.of(completion)
-                    });
+            filter: false,
+            validFor(text, from, to) {
+                console.log('completion: valid for', { text, from, to });
+                return false;
+            },
+            update(current, from, to, context) {
+                console.log('completion: update', { current, from, to, context });
+                const tracker = context.state.field(trackerField);
+                if (!tracker || tracker.type === 'error') {
+                    return null;
                 }
-            }]
-        };
+
+                return {
+                    ...current,
+                    from: tracker.range.from,
+                    to: tracker.range.to,
+                    options: completionOptionsFromTracker(context.state, tracker)
+                };
+            },
+            options: completionOptionsFromTracker(context.state, tracker)
+        } as CompletionResult;
     }
 
     return null;
@@ -134,6 +132,13 @@ const trackerField = StateField.define<AbbreviationTracker | null>({
     create: () => null,
     update(value, tr) {
         console.log('field tracker update', tr);
+
+        const hasCompletion = tr.annotation(pickedCompletion);
+        if (hasCompletion) {
+            console.log('has completion', hasCompletion);
+            // When completion is applied, always reset tracker
+            return null;
+        }
 
         for (const effect of tr.effects) {
             if (effect.is(resetTracker)) {
@@ -214,7 +219,7 @@ export function expandTracker({ state, dispatch }: StateCommandTarget, tracker: 
     const { from, to } = tracker.range;
     const expanded = expand(tracker.abbreviation, tracker.config);
     const fn = snippet(expanded);
-    console.log('expand tracker');
+    console.log('expand tracker with snippet');
     // dispatch(state.update({
     //     effects: resetTracker.of(null)
     // }));
@@ -222,6 +227,11 @@ export function expandTracker({ state, dispatch }: StateCommandTarget, tracker: 
 }
 
 const tabKeyHandler: Command = ({ state, dispatch }) => {
+    if (completionStatus(state)) {
+        // Must be handled by `acceptCompletion` command
+        return false;
+    }
+
     const tracker = state.field(trackerField, false);
     if (tracker && !tracker.inactive && contains(tracker.range, getCaret(state))) {
         expandTracker({ state, dispatch }, tracker);
@@ -635,8 +645,39 @@ function hasSnippet(state: any): boolean {
 }
 
 function canDisplayPreview(state: EditorState, tracker: AbbreviationTracker): tracker is AbbreviationTrackerValid {
-    if (tracker.config.type === 'stylesheet') {
-        return false
+    if (completionStatus(state)) {
+        return false;
     }
+
     return tracker.type === 'abbreviation' && (!tracker.simple || tracker.forced) && !!tracker.abbreviation && contains(tracker.range, getCaret(state));
+}
+
+function completionOptionsFromTracker(state: EditorState, tracker: AbbreviationTrackerValid, prev?: EmmetCompletion): EmmetCompletion[] {
+    return [{
+        label: 'Emmet abbreviation',
+        type: 'emmet',
+        boost: 99,
+        tracker,
+        previewConfig: state.facet(config).preview,
+        preview: prev?.preview,
+        info: completionInfo,
+        apply: (view, completion) => {
+            console.log('apply completion');
+            view.dispatch({
+                annotations: pickedCompletion.of(completion)
+            });
+            expandTracker(view, tracker);
+        }
+    }];
+}
+
+function completionInfo(completion: Completion): Node {
+    let { tracker, previewConfig, preview } = completion as EmmetCompletion;
+    if (preview?.update) {
+        preview.update(tracker.preview);
+    } else {
+        (completion as EmmetCompletion).preview = preview = createPreview(tracker.preview, tracker.config.syntax || 'html', previewConfig);
+    }
+
+    return preview;
 }

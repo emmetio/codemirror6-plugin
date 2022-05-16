@@ -1,13 +1,12 @@
 import { EditorState } from '@codemirror/state';
-import type { Extension } from '@codemirror/state';
 import { WidgetType, EditorView } from '@codemirror/view';
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import type { EmmetPreviewConfig, PreviewExtensions } from './config';
 
-interface HTMLElementWithView extends HTMLElement {
-    view?: EditorView;
+export interface HTMLElementPreview extends HTMLElement {
+    update?: (value: string) => void;
 }
 
 export default class AbbreviationPreviewWidget extends WidgetType {
@@ -16,19 +15,22 @@ export default class AbbreviationPreviewWidget extends WidgetType {
     }
 
     eq(other: any) {
+        console.log('compare', {
+            curValue: this.value,
+            otherValue: other.value,
+            curSyntax: this.syntax,
+            otherSyntax: other.syntax
+        });
+
         return other.value === this.value && other.syntax === this.syntax;
     }
 
-    updateDOM(_dom: HTMLElementWithView): boolean {
-        if (_dom.view) {
-            const tr = _dom.view.state.update({
-                changes: {
-                    from: 0,
-                    to: _dom.view.state.doc.length,
-                    insert: this.value
-                }
-            });
-            _dom.view.dispatch(tr);
+    updateDOM(_dom: HTMLElementPreview): boolean {
+        console.log('update dom', _dom);
+
+        if (_dom.update) {
+            console.log('update preview');
+            _dom.update(this.value);
             return true;
         }
 
@@ -36,33 +38,45 @@ export default class AbbreviationPreviewWidget extends WidgetType {
     }
 
     toDOM() {
-        const elem = document.createElement('div') as HTMLElementWithView;
-        elem.className = 'emmet-preview';
-        if (this.syntax === 'error') {
-            elem.classList.add('emmet-preview_error');
-        }
+        console.log('create preview');
+        return createPreview(this.value, this.syntax, this.options);
+    }
+}
 
-        elem.view = new EditorView({
-            state: EditorState.create({
-                doc: this.value,
-                extensions: [
-                    syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-                    this.syntax === 'css' ? css() : html(),
-                    this.getExtensions()
-                ]
-            }),
-            parent: elem
+export function createPreview(value: string, syntax: string, options?: EmmetPreviewConfig): HTMLElementPreview {
+    const elem = document.createElement('div') as HTMLElementPreview;
+    elem.className = 'emmet-preview';
+    if (syntax === 'error') {
+        elem.classList.add('emmet-preview_error');
+    }
+
+    let ext: PreviewExtensions = syntax === 'css' ? css : html;
+    if (options && syntax in options) {
+        ext = options[syntax as keyof EmmetPreviewConfig]!;
+    }
+
+    const view = new EditorView({
+        state: EditorState.create({
+            doc: value,
+            extensions: [
+                EditorState.readOnly.of(true),
+                syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+                ext()
+            ]
+        }),
+        parent: elem
+    });
+
+    elem.update = (nextValue) => {
+        const tr = view.state.update({
+            changes: {
+                from: 0,
+                to: view.state.doc.length,
+                insert: nextValue
+            }
         });
-        return elem;
-    }
+        view.dispatch(tr);
+    };
 
-    private getExtensions(): Extension {
-        let ext: PreviewExtensions = this.syntax === 'css' ? css : html;
-
-        if (this.options && this.syntax in this.options) {
-            ext = this.options[this.syntax as keyof EmmetPreviewConfig]!;
-        }
-
-        return ext();
-    }
+    return elem;
 }
