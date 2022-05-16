@@ -11,7 +11,7 @@ import type { CompletionSource } from '@codemirror/autocomplete';
 import { getCSSContext, getHTMLContext } from '../lib/context';
 import { docSyntax, getMarkupAbbreviationContext, getStylesheetAbbreviationContext, getSyntaxType, isCSS, isHTML, isJSX, isSupported } from '../lib/syntax';
 import getOutputOptions from '../lib/output';
-import type { CSSContext, AbbreviationError, StartTrackingParams, RangeObject, StateCommandTarget } from '../lib/types';
+import type { CSSContext, AbbreviationError, StartTrackingParams, RangeObject } from '../lib/types';
 import { contains, getCaret, rangeEmpty, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
 import { type HTMLElementPreview, createPreview } from './AbbreviationPreviewWidget';
@@ -39,19 +39,12 @@ type AbbreviationTracker = AbbreviationTrackerValid | AbbreviationTrackerError;
 // Нужно найти способ обновить трэкер раньше, чем отработает код автокомплита
 const emmetCompletionSource: CompletionSource = context => {
     const tracker = context.state.field(trackerField);
-    console.log('request completions', tracker, context);
-
     if (tracker?.type === 'abbreviation') {
         return {
             from: tracker.range.from,
             to: tracker.range.to,
             filter: false,
-            validFor(text, from, to) {
-                console.log('completion: valid for', { text, from, to });
-                return false;
-            },
-            update(current, from, to, context) {
-                console.log('completion: update', { current, from, to, context });
+            update(current, _from, _to, context) {
                 const tracker = context.state.field(trackerField);
                 if (!tracker || tracker.type === 'error') {
                     return null;
@@ -134,15 +127,8 @@ export const enterAbbreviationMode: StateCommand = ({ state, dispatch }) => {
 const trackerField = StateField.define<AbbreviationTracker | null>({
     create: () => null,
     update(value, tr) {
-        const hasCompletion = tr.annotation(pickedCompletion);
-        if (hasCompletion) {
-            // When completion is applied, always reset tracker
-            return null;
-        }
-
         for (const effect of tr.effects) {
             if (effect.is(resetTracker)) {
-                console.log('reset tracker');
                 return null;
             }
 
@@ -262,18 +248,19 @@ const abbreviationTracker = ViewPlugin.fromClass(class {
     decorations: v => v.decorations,
 });
 
-export function expandTracker({ state, dispatch }: StateCommandTarget, tracker: AbbreviationTracker): void {
+export function expandTracker(view: EditorView, tracker: AbbreviationTracker): void {
     const { from, to } = tracker.range;
     const expanded = expand(tracker.abbreviation, tracker.config);
     const fn = snippet(expanded);
-    console.log('expand tracker with snippet');
-    // dispatch(state.update({
-    //     effects: resetTracker.of(null)
-    // }));
-    fn({ state, dispatch }, { label: 'expand' }, from, to);
+
+    view.dispatch(view.state.update({
+        effects: resetTracker.of(null)
+    }));
+    fn(view, { label: 'expand' }, from, to);
 }
 
-const tabKeyHandler: Command = ({ state, dispatch }) => {
+const tabKeyHandler: Command = (view) => {
+    const { state } = view;
     if (completionStatus(state)) {
         // Must be handled by `acceptCompletion` command
         return false;
@@ -281,7 +268,7 @@ const tabKeyHandler: Command = ({ state, dispatch }) => {
 
     const tracker = state.field(trackerField, false);
     if (tracker && !tracker.inactive && contains(tracker.range, getCaret(state))) {
-        expandTracker({ state, dispatch }, tracker);
+        expandTracker(view, tracker);
         return true;
     }
     return false;
@@ -555,7 +542,7 @@ function createTracker(state: EditorState, range: RangeObject, params: StartTrac
             preview: expand(parsedAbbr as unknown as string, previewConfig),
         };
     } catch (error) {
-        console.log('invalid abbreviation', error);
+        // console.log('invalid abbreviation', error);
         return base.forced ? {
             ...base,
             type: 'error',
