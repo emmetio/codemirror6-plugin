@@ -36,7 +36,6 @@ function toggleHTMLComment(state: EditorState, pos: number): ChangeSpec[] {
     let result: ChangeSpec[] = [];
     const ctx = getContextOfType(state, pos, ['Element', 'Comment']);
     if (ctx) {
-        console.log('got context', ctx);
         if (ctx.name === 'Comment') {
             result = result.concat(stripComment(state, ctx, htmlComment))
         } else {

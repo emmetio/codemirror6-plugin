@@ -1,6 +1,7 @@
 import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
 import { html } from '@codemirror/lang-html';
 import { keymap } from '@codemirror/view';
+import { Prec } from '@codemirror/state';
 
 import {
     abbreviationTracker, expandAbbreviation,
@@ -45,7 +46,7 @@ new EditorView({
         extensions: [
             basicSetup,
             html(),
-            abbreviationTracker(),
+            Prec.high(abbreviationTracker()),
             wrapWithAbbreviation(),
             keymap.of([{
                 key: 'Cmd-e',

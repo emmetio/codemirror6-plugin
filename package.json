@@ -1,26 +1,28 @@
 {
   "name": "@emmetio/codemirror6-plugin",
-  "version": "0.0.8",
+  "version": "0.0.6",
   "main": "./dist/plugin.js",
   "types": "./dist/plugin.d.ts",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3009",
-    "build": "vite build && tsc",
+    "build": "tsc && vite build",
     "serve": "vite preview",
     "prepare": "npm run build"
   },
   "devDependencies": {
     "@codemirror/basic-setup": "^0.20.0",
-    "typescript": "^4.3.2",
-    "vite": "^2.6.4"
+    "typescript": "^4.6.2",
+    "vite": "^2.8.6"
   },
   "dependencies": {
     "@emmetio/math-expression": "^1.0.4",
-    "emmet": "^2.3.4"
+    "emmet": "^2.3.6"
   },
   "peerDependencies": {
     "@codemirror/autocomplete": "^0.20.0",
+    "@codemirror/highlight": "^0.19.8",
+    "@codemirror/history": "^0.19.2",
     "@codemirror/commands": "^0.20.0",
     "@codemirror/lang-css": "^0.20.0",
     "@codemirror/lang-html": "^0.20.0",

@@ -96,6 +96,7 @@ const wrapWithAbbreviationPlugin = ViewPlugin.fromClass(class WrapWithAbbreviati
         }
     }
 
+    // TODO use @codemirror/panel instead
     private createInputPanel(view: EditorView) {
         const widget = document.createElement('div');
         widget.className = 'emmet-wrap-with-abbreviation';
