@@ -548,7 +548,6 @@ function createTracker(state: EditorState, range: RangeObject, params: StartTrac
             preview: expand(parsedAbbr as unknown as string, previewConfig),
         };
     } catch (error) {
-        // console.log('invalid abbreviation', error);
         return base.forced ? {
             ...base,
             type: 'error',
