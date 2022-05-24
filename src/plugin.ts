@@ -25,7 +25,7 @@ new EditorView({
 })
 ```
 */
-export { enterAbbreviationMode } from './tracker';
+export { enterAbbreviationMode, emmetCompletionSource } from './tracker';
 export { expandAbbreviation } from './commands/expand';
 export { balanceOutward, balanceInward } from './commands/balance';
 export { toggleComment } from './commands/comment';

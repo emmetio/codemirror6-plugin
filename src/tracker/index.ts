@@ -37,7 +37,7 @@ type AbbreviationTracker = AbbreviationTrackerValid | AbbreviationTrackerError;
 // Текущая реализация укладывается в нужную концепцию,
 // но проверка автокомплита обрабатывается раньше, чем обновляется трэкер.
 // Нужно найти способ обновить трэкер раньше, чем отработает код автокомплита
-const emmetCompletionSource: CompletionSource = context => {
+export const emmetCompletionSource: CompletionSource = context => {
     const tracker = context.state.field(trackerField);
     if (tracker?.type === 'abbreviation') {
         return {
