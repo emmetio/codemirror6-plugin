@@ -158,7 +158,7 @@ function detectCSSContextFromHTML(state: EditorState, pos: number, ctx: HTMLCont
                     break;
                 }
 
-                if (contains(attr, pos) && getAttributeName(state, attr)) {
+                if (contains(attr, pos) && getAttributeName(state, attr) === 'style') {
                     const attrValue = attr.getChild('AttributeValue');
                     if (attrValue) {
                         const cleanValueRange = getAttributeValueRange(state, attrValue);
