@@ -27,6 +27,7 @@ export function createPreview(value: string, syntax: string, options?: EmmetPrev
             extensions: [
                 EditorState.readOnly.of(true),
                 syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+                syntax === 'css' ? css() : html(),
                 ext()
             ]
         }),
