@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3009",
-    "build": "tsc && vite build",
+    "build": "vite build && tsc",
     "serve": "vite preview",
     "prepare": "npm run build"
   },
