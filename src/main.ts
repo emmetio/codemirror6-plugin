@@ -1,4 +1,4 @@
-import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
+import { EditorView, basicSetup } from 'codemirror';
 import { html } from '@codemirror/lang-html';
 import { keymap } from '@codemirror/view';
 import { Prec } from '@codemirror/state';
@@ -41,57 +41,55 @@ const text = `<html style="color: green">
 </html>`;
 
 new EditorView({
-    state: EditorState.create({
-        doc: text,
-        extensions: [
-            basicSetup,
-            html(),
-            Prec.high(abbreviationTracker()),
-            wrapWithAbbreviation(),
-            keymap.of([{
-                key: 'Cmd-e',
-                run: expandAbbreviation
-            },{
-                key: 'Cmd-Shift-e',
-                run: enterAbbreviationMode
-            }, {
-                key: 'Cmd-Shift-d',
-                run: balanceOutward
-            }, {
-                key: 'Ctrl-/',
-                run: toggleComment
-            }, {
-                key: 'Ctrl-y',
-                run: evaluateMath
-            }, {
-                key: 'Ctrl-Alt-ArrowLeft',
-                run: goToPreviousEditPoint
-            }, {
-                key: 'Ctrl-Alt-ArrowRight',
-                run: goToNextEditPoint
-            }, {
-                key: 'Ctrl-g',
-                run: goToTagPair
-            }, {
-                key: 'Ctrl-Alt-ArrowUp',
-                run: incrementNumber1
-            }, {
-                key: 'Ctrl-Alt-ArrowDown',
-                run: decrementNumber1
-            }, {
-                key: 'Ctrl-\'',
-                run: removeTag
-            }, {
-                key: 'Ctrl-Shift-\'',
-                run: splitJoinTag
-            }, {
-                key: 'Ctrl-.',
-                run: selectNextItem
-            }, {
-                key: 'Ctrl-,',
-                run: selectPreviousItem
-            }]),
-        ]
-    }),
+    doc: text,
+    extensions: [
+        basicSetup,
+        html(),
+        Prec.high(abbreviationTracker()),
+        wrapWithAbbreviation(),
+        keymap.of([{
+            key: 'Cmd-e',
+            run: expandAbbreviation
+        },{
+            key: 'Cmd-Shift-e',
+            run: enterAbbreviationMode
+        }, {
+            key: 'Cmd-Shift-d',
+            run: balanceOutward
+        }, {
+            key: 'Ctrl-/',
+            run: toggleComment
+        }, {
+            key: 'Ctrl-y',
+            run: evaluateMath
+        }, {
+            key: 'Ctrl-Alt-ArrowLeft',
+            run: goToPreviousEditPoint
+        }, {
+            key: 'Ctrl-Alt-ArrowRight',
+            run: goToNextEditPoint
+        }, {
+            key: 'Ctrl-g',
+            run: goToTagPair
+        }, {
+            key: 'Ctrl-Alt-ArrowUp',
+            run: incrementNumber1
+        }, {
+            key: 'Ctrl-Alt-ArrowDown',
+            run: decrementNumber1
+        }, {
+            key: 'Ctrl-\'',
+            run: removeTag
+        }, {
+            key: 'Ctrl-Shift-\'',
+            run: splitJoinTag
+        }, {
+            key: 'Ctrl-.',
+            run: selectNextItem
+        }, {
+            key: 'Ctrl-,',
+            run: selectPreviousItem
+        }]),
+    ],
     parent: document.querySelector<HTMLDivElement>('#app')!
 });

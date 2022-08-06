@@ -1,5 +1,5 @@
+import { EditorView } from 'codemirror';
 import { EditorState } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
@@ -22,15 +22,13 @@ export function createPreview(value: string, syntax: string, options?: EmmetPrev
     }
 
     const view = new EditorView({
-        state: EditorState.create({
-            doc: value,
-            extensions: [
-                EditorState.readOnly.of(true),
-                syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-                syntax === 'css' ? css() : html(),
-                ext()
-            ]
-        }),
+        doc: value,
+        extensions: [
+            EditorState.readOnly.of(true),
+            syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+            syntax === 'css' ? css() : html(),
+            ext()
+        ],
         parent: elem
     });
 
