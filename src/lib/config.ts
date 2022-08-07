@@ -1,5 +1,6 @@
 import type { GlobalConfig } from 'emmet';
 import { EditorState, Extension, Facet } from '@codemirror/state';
+import { resetCache } from './emmet';
 
 export interface EmmetEditorOptions {
     emmet: EmmetConfig;
@@ -84,6 +85,11 @@ export interface EmmetConfig {
     config?: GlobalConfig;
 
     /**
+     * A `boost` option for CodeMirror completions
+     */
+    completionBoost?: number;
+
+    /**
      * Function for attaching abbreviation preview
      */
     // attachPreview?: (editor: CodeMirror.Editor, preview: HTMLElement, pos: CodeMirror.Position) => void;
@@ -100,11 +106,13 @@ export const defaultConfig: EmmetConfig = {
     markupStyle: 'html',
     comments: false,
     commentsTemplate: '<!-- /[#ID][.CLASS] -->',
-    bem: false
+    bem: false,
+    completionBoost: 99
 };
 
 export const config = Facet.define<Partial<EmmetConfig>, EmmetConfig>({
     combine(value) {
+        resetCache();
         const baseConfig: EmmetConfig = { ...defaultConfig };
         const { preview } = baseConfig;
         for (const item of value) {

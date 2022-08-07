@@ -178,6 +178,8 @@ export function getStylesheetAbbreviationContext(ctx: CSSContext): AbbreviationC
         } else if ((ctx.current.type === TokenType.Selector || ctx.current.type === TokenType.PropertyName) && !parent) {
             scope = CSSAbbreviationScope.Section;
         }
+    } else if (!parent) {
+        scope = CSSAbbreviationScope.Section;
     }
 
     return {

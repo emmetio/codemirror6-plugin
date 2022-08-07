@@ -1,5 +1,5 @@
 import type { MarkupAbbreviation, StylesheetAbbreviation, UserConfig } from 'emmet';
-import { stylesheetAbbreviation, markupAbbreviation } from 'emmet';
+import { markupAbbreviation } from 'emmet';
 import { ViewPlugin, Decoration, keymap, EditorView, type Tooltip, showTooltip } from '@codemirror/view';
 import type { DecorationSet, Command, ViewUpdate } from '@codemirror/view';
 import { StateEffect, StateField } from '@codemirror/state';
@@ -39,7 +39,7 @@ type AbbreviationTracker = AbbreviationTrackerValid | AbbreviationTrackerError;
 // Нужно найти способ обновить трэкер раньше, чем отработает код автокомплита
 export const emmetCompletionSource: CompletionSource = context => {
     const tracker = context.state.field(trackerField);
-    if (tracker?.type === 'abbreviation') {
+    if (tracker?.type === 'abbreviation' && tracker.preview) {
         return {
             from: tracker.range.from,
             to: tracker.range.to,
@@ -368,8 +368,6 @@ function typingAbbreviation(state: EditorState, pos: number, input: string): Abb
     }
 
     const config = getActivationContext(state, pos);
-    console.log('activation context', config);
-
     if (!config) {
         return null;
     }
@@ -444,8 +442,6 @@ function getCSSActivationContext(state: EditorState, pos: number, syntax: string
         || ctx.current.type === 'propertyValue'
         || isTypingBeforeSelector(state, pos, ctx);
 
-    console.log('check context', ctx);
-
     if (allowedContext) {
         return {
             syntax,
@@ -492,7 +488,7 @@ function isValidAbbreviationStart(input: string, syntax: string): boolean {
     }
 
     if (isCSS(syntax)) {
-        return /^[a-zA-Z!@]$/.test(input);
+        return /^[a-zA-Z!@#]$/.test(input);
     }
 
     return /^[a-zA-Z.#!@\[\(]$/.test(input);
@@ -534,9 +530,7 @@ function createTracker(state: EditorState, range: RangeObject, params: StartTrac
         let parsedAbbr: MarkupAbbreviation | StylesheetAbbreviation | undefined;
         let simple = false;
 
-        if (config.type === 'stylesheet') {
-            parsedAbbr = stylesheetAbbreviation(abbreviation);
-        } else {
+        if (config.type === 'markup') {
             parsedAbbr = markupAbbreviation(abbreviation, {
                 jsx: config.syntax === 'jsx'
             });
@@ -544,11 +538,18 @@ function createTracker(state: EditorState, range: RangeObject, params: StartTrac
         }
 
         const previewConfig = createPreviewConfig(config);
+        const preview = expand(state, parsedAbbr || abbreviation, previewConfig);
+        if (!preview) {
+            // Handle edge case: abbreviation didn’t return any result for preview.
+            // Most likely it means a CSS context where given abbreviation is not applicable
+            return null;
+        }
+
         return {
             ...base,
             type: 'abbreviation',
             simple,
-            preview: expand(state, parsedAbbr as unknown as string, previewConfig),
+            preview,
         };
     } catch (error) {
         return base.forced ? {
@@ -701,12 +702,13 @@ export function canDisplayPreview(state: EditorState, tracker: AbbreviationTrack
 }
 
 function completionOptionsFromTracker(state: EditorState, tracker: AbbreviationTrackerValid, prev?: EmmetCompletion): EmmetCompletion[] {
+    const opt = state.facet(config);
     return [{
         label: 'Emmet abbreviation',
         type: 'emmet',
-        boost: 99,
+        boost: opt.completionBoost,
         tracker,
-        previewConfig: state.facet(config).preview,
+        previewConfig: opt.preview,
         preview: prev?.preview,
         info: completionInfo,
         apply: (view, completion) => {

@@ -3,7 +3,7 @@ import { EditorState } from '@codemirror/state';
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
-import type { EmmetPreviewConfig, PreviewExtensions } from './config';
+import type { EmmetPreviewConfig, PreviewExtensions } from '../lib/config';
 
 export interface HTMLElementPreview extends HTMLElement {
     update?: (value: string) => void;

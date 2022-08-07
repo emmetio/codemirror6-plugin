@@ -135,3 +135,7 @@ export function getOptions(state: EditorState, pos: number): UserConfig {
 
     return config;
 }
+
+export function resetCache() {
+    cache = {};
+}

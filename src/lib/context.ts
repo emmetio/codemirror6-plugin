@@ -89,7 +89,7 @@ export function getCSSContext(state: EditorState, pos: number, embedded?: RangeO
 
     const tip = stack.shift();
 
-    // Check if stack tip contains current current position: make it current
+    // Check if stack tip contains current position: make it current
     // context item if so
     if (tip) {
         const range: RangeObject = tip.type === 'selector'
