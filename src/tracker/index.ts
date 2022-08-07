@@ -16,7 +16,7 @@ import { contains, getCaret, rangeEmpty, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
 import { type HTMLElementPreview, createPreview } from './AbbreviationPreviewWidget';
 import icon from '../completion-icon.svg';
-import { config, EmmetPreviewConfig, type EmmetConfig } from './config';
+import getEmmetConfig, { config, EmmetPreviewConfig, type EmmetConfig } from '../lib/config';
 
 interface EmmetCompletion extends Completion {
     tracker: AbbreviationTrackerValid;
@@ -256,7 +256,7 @@ const abbreviationTracker = ViewPlugin.fromClass(class {
 
 export function expandTracker(view: EditorView, tracker: AbbreviationTracker): void {
     const { from, to } = tracker.range;
-    const expanded = expand(tracker.abbreviation, tracker.config);
+    const expanded = expand(view.state, tracker.abbreviation, tracker.config);
     const fn = snippet(expanded);
 
     view.dispatch(view.state.update({
@@ -363,17 +363,18 @@ function typingAbbreviation(state: EditorState, pos: number, input: string): Abb
     const prefix = line.text.substring(Math.max(0, pos - line.from - 1), pos - line.from);
 
     // Check if current syntax is supported for tracking
-    if (!canStartStarting(prefix, input, getSyntaxFromPos(state, pos))) {
+    if (!canStartTyping(prefix, input, getSyntaxFromPos(state, pos))) {
         return null;
     }
 
     const config = getActivationContext(state, pos);
+    console.log('activation context', config);
 
     if (!config) {
         return null;
     }
 
-    if (config.type === 'stylesheet' && !canStartStarting(prefix, input, 'css')) {
+    if (config.type === 'stylesheet' && !canStartTyping(prefix, input, 'css')) {
         // Additional check for stylesheet abbreviation start: it’s slightly
         // differs from markup prefix, but we need activation context
         // to ensure that context under caret is CSS
@@ -442,6 +443,8 @@ function getCSSActivationContext(state: EditorState, pos: number, syntax: string
         || ctx.current.type === 'propertyName'
         || ctx.current.type === 'propertyValue'
         || isTypingBeforeSelector(state, pos, ctx);
+
+    console.log('check context', ctx);
 
     if (allowedContext) {
         return {
@@ -545,7 +548,7 @@ function createTracker(state: EditorState, range: RangeObject, params: StartTrac
             ...base,
             type: 'abbreviation',
             simple,
-            preview: expand(parsedAbbr as unknown as string, previewConfig),
+            preview: expand(state, parsedAbbr as unknown as string, previewConfig),
         };
     } catch (error) {
         return base.forced ? {
@@ -661,7 +664,7 @@ function getSyntaxFromPos(state: EditorState, pos: number): string {
     return '';
 }
 
-function canStartStarting(prefix: string, input: string, syntax: string) {
+function canStartTyping(prefix: string, input: string, syntax: string) {
     return isValidPrefix(prefix, syntax) && isValidAbbreviationStart(input, syntax);
 }
 
@@ -677,10 +680,23 @@ function hasSnippet(state: any): boolean {
     return false;
 }
 
-function canDisplayPreview(state: EditorState, tracker: AbbreviationTracker): boolean {
+export function canDisplayPreview(state: EditorState, tracker: AbbreviationTracker): boolean {
     if (completionStatus(state) === 'active') {
         return false;
     }
+
+    const config = getEmmetConfig(state);
+    if (!config.previewEnabled) {
+        return false;
+    }
+
+    if (Array.isArray(config.previewEnabled)) {
+        const { type, syntax } = tracker.config;
+        if (!config.previewEnabled.includes(type!) && !config.previewEnabled.includes(syntax!)) {
+            return false;
+        }
+    }
+
     return tracker.type === 'error' || (!tracker.simple || tracker.forced) && !!tracker.abbreviation && contains(tracker.range, getCaret(state));
 }
 

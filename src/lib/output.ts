@@ -5,7 +5,7 @@ import { isHTML, docSyntax } from './syntax';
 
 export default function getOutputOptions(state: EditorState, inline?: boolean): Partial<Options> {
     const syntax = docSyntax(state) || 'html';
-    const config = getEmmetConfig();
+    const config = getEmmetConfig(state);
 
     const opt: Partial<Options> = {
         // 'output.baseIndent': lineIndent(state.doc.lineAt(pos)),

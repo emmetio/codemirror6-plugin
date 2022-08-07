@@ -122,7 +122,7 @@ const wrapWithAbbreviationPlugin = ViewPlugin.fromClass(class WrapWithAbbreviati
                 const nextAbbreviation = input.value;
                 undoUpdate();
 
-                const nextAbbr = {
+                const nextAbbr: WrapAbbreviation = {
                     ...abbr,
                     abbreviation: nextAbbreviation
                 };
@@ -130,7 +130,7 @@ const wrapWithAbbreviationPlugin = ViewPlugin.fromClass(class WrapWithAbbreviati
                 if (nextAbbr.abbreviation) {
                     updated = true;
                     const { from, to } = nextAbbr.range;
-                    const expanded = expand(nextAbbr.abbreviation, nextAbbr.options);
+                    const expanded = expand(view.state, nextAbbr.abbreviation, nextAbbr.options);
                     const { ranges, snippet } = getSelectionsFromSnippet(expanded, from);
                     const nextSel = ranges[0];
 

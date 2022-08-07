@@ -45,7 +45,15 @@ new EditorView({
     extensions: [
         basicSetup,
         html(),
-        Prec.high(abbreviationTracker()),
+        Prec.high(abbreviationTracker({
+            config: {
+                markup: {
+                    snippets: {
+                        'foo': 'ul.foo>li.bar+li.baz'
+                    }
+                }
+            }
+        })),
         wrapWithAbbreviation(),
         keymap.of([{
             key: 'Cmd-e',

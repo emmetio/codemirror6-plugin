@@ -25,7 +25,7 @@ export const JSX_PREFIX = '<';
 /**
  * Expands given abbreviation into code snippet
  */
-export function expand(abbr: string | MarkupAbbreviation | StylesheetAbbreviation, config?: UserConfig) {
+export function expand(state: EditorState, abbr: string | MarkupAbbreviation | StylesheetAbbreviation, config?: UserConfig) {
     let opt: UserConfig = { cache };
     const outputOpt: Partial<Options> = {
         'output.field': field,
@@ -40,7 +40,7 @@ export function expand(abbr: string | MarkupAbbreviation | StylesheetAbbreviatio
 
     opt.options = outputOpt;
 
-    const pluginConfig = getEmmetConfig();
+    const pluginConfig = getEmmetConfig(state);
     if (pluginConfig.config) {
         opt = resolveConfig(opt, pluginConfig.config);
     }
@@ -57,7 +57,7 @@ export function expand(abbr: string | MarkupAbbreviation | StylesheetAbbreviatio
  * CSS selectors may not contain abbreviations.
  * @param code Code from which abbreviation should be extracted
  * @param pos Location at which abbreviation should be expanded
- * @param syntax Syntax of abbreviation to expand
+ * @param type Syntax of abbreviation to expand
  */
 export function extract(code: string, pos: number, type: SyntaxType = 'markup', options?: Partial<ExtractOptions>): ExtractedAbbreviation | undefined {
     return extractAbbreviation(code, pos, {

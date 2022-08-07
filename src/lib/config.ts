@@ -1,21 +1,35 @@
 import type { GlobalConfig } from 'emmet';
+import { EditorState, Extension, Facet } from '@codemirror/state';
 
 export interface EmmetEditorOptions {
     emmet: EmmetConfig;
 }
 
 export type EnableForSyntax = boolean | string[];
+export type PreviewExtensions = () => Extension;
+
+export interface EmmetPreviewConfig {
+    /** Extensions factory for displaying HTML-like abbreviation preview  */
+    html?: PreviewExtensions;
+    /** Extensions factory for displaying CSS-like abbreviation preview  */
+    css?: PreviewExtensions;
+}
 
 export interface EmmetConfig {
     /** Enables abbreviation marking in editor. Works in known syntaxes only */
     mark: EnableForSyntax;
 
     /**
+     * Config for proview popup
+     */
+    preview: EmmetPreviewConfig;
+
+    /**
      * Enables preview of marked abbreviation. Pass `true` to enable preview for
      * all syntaxes or array of modes or Emmet syntax types (`markup` or `stylesheet`)
      * where preview should be displayed
      */
-    preview: EnableForSyntax;
+    previewEnabled: EnableForSyntax;
 
     /** Mark HTML tag pairs in editor */
     markTagPairs: boolean;
@@ -77,7 +91,8 @@ export interface EmmetConfig {
 
 export const defaultConfig: EmmetConfig = {
     mark: true,
-    preview: true,
+    preview: { },
+    previewEnabled: true,
     autoRenameTags: true,
     markTagPairs: true,
     previewOpenTag: false,
@@ -88,6 +103,29 @@ export const defaultConfig: EmmetConfig = {
     bem: false
 };
 
-export default function getEmmetConfig(opt?: Partial<EmmetConfig>): EmmetConfig {
-    return { ...defaultConfig, ...opt };
+export const config = Facet.define<Partial<EmmetConfig>, EmmetConfig>({
+    combine(value) {
+        const baseConfig: EmmetConfig = { ...defaultConfig };
+        const { preview } = baseConfig;
+        for (const item of value) {
+            Object.assign(baseConfig, item);
+            if (item.preview) {
+                baseConfig.preview = {
+                    ...preview,
+                    ...item.preview
+                };
+            }
+        }
+
+        return baseConfig;
+    }
+});
+
+export default function getEmmetConfig(state: EditorState, opt?: Partial<EmmetConfig>): EmmetConfig {
+    let conf = state.facet(config);
+    if (opt) {
+        conf = { ...conf, ...opt };
+    }
+
+    return conf;
 }

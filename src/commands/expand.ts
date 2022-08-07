@@ -12,7 +12,7 @@ export const expandAbbreviation: StateCommand = ({ state, dispatch }) => {
 
     if (abbr) {
         const start = line.from + abbr.start;
-        const expanded = expand(abbr.abbreviation, getActivationContext(state, start) || options);
+        const expanded = expand(state, abbr.abbreviation, getActivationContext(state, start) || options);
         const fn = snippet(expanded);
         fn({ state, dispatch }, { label: 'expand' }, start, line.from + abbr.end);
         return true;
