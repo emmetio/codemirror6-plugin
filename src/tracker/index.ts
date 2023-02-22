@@ -12,7 +12,7 @@ import { getCSSContext, getHTMLContext } from '../lib/context';
 import { docSyntax, getMarkupAbbreviationContext, getStylesheetAbbreviationContext, getSyntaxType, isCSS, isHTML, isJSX, isSupported } from '../lib/syntax';
 import getOutputOptions from '../lib/output';
 import type { CSSContext, AbbreviationError, StartTrackingParams, RangeObject } from '../lib/types';
-import { contains, getCaret, rangeEmpty, substr } from '../lib/utils';
+import { commonlyUsedTags, contains, getCaret, rangeEmpty, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
 import { type HTMLElementPreview, createPreview } from './AbbreviationPreviewWidget';
 import icon from '../completion-icon.svg';
@@ -494,12 +494,41 @@ function isValidAbbreviationStart(input: string, syntax: string): boolean {
     return /^[a-zA-Z.#!@\[\(]$/.test(input);
 }
 
+function isExpandedTextNoise(
+    syntax: string,
+    abbreviation: string,
+    expanded: string
+): boolean {
+    if (!isHTML(syntax)) {
+        // Skip noise check for non-html syntaxes for now
+        return false;
+    }
+
+    // Abbreviations that match the start of a known html tag are not noise
+    const lower = abbreviation.toLowerCase();
+    if (commonlyUsedTags.html.some((tag) => tag.startsWith(lower))) {
+        return false;
+    }
+
+    // Unresolved html abbreviations get expanded as if it were a tag
+    // Eg: abc -> <abc></abc> which is noise if it gets suggested for every word typed
+    return (
+        expanded.toLowerCase() ===
+        `<${abbreviation.toLowerCase()}></${abbreviation.toLowerCase()}>`
+    );
+}
+
 /**
  * Creates abbreviation tracker for given range in editor. Parses contents
  * of abbreviation in range and returns either valid abbreviation tracker,
  * error tracker or `null` if abbreviation cannot be created from given range
  */
-function createTracker(state: EditorState, range: RangeObject, params: StartTrackingParams): AbbreviationTracker | null {
+function createTracker(
+    state: EditorState,
+    range: RangeObject,
+    params: StartTrackingParams
+): AbbreviationTracker | null {
+    const syntax = getSyntaxFromPos(state, range.from);
     if (range.from > range.to) {
         // Invalid range
         return null;
@@ -542,6 +571,11 @@ function createTracker(state: EditorState, range: RangeObject, params: StartTrac
         if (!preview) {
             // Handle edge case: abbreviation didn’t return any result for preview.
             // Most likely it means a CSS context where given abbreviation is not applicable
+            return null;
+        }
+
+        if (isExpandedTextNoise(syntax, abbreviation, preview)) {
+            // Filter out noisy results
             return null;
         }
 

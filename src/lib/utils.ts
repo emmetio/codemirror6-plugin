@@ -194,3 +194,12 @@ export function getSelectionsFromSnippet(snippet: string, base = 0): { ranges: R
         snippet: result + snippet.slice(offset)
     };
 }
+
+export const commonlyUsedTags = {
+    html: [
+        "body", "head", "html",
+        "address", "blockquote", "dd", "div", "section", "article", "aside", "header", "footer", "nav", "menu", "dl", "dt", "fieldset", "form", "frame", "frameset", "h1", "h2", "h3", "h4", "h5", "h6", "iframe", "noframes", "object", "ol", "p", "ul", "applet", "center", "dir", "hr", "pre",
+        "a", "abbr", "acronym", "area", "b", "base", "basefont", "bdo", "big", "br", "button", "caption", "cite", "code", "col", "colgroup", "del", "dfn", "em", "font", "i", "img", "input", "ins", "isindex", "kbd", "label", "legend", "li", "link", "map", "meta", "noscript", "optgroup", "option", "param", "q", "s", "samp", "script", "select", "small", "span", "strike", "strong", "style", "sub", "sup", "table", "tbody", "td", "textarea", "tfoot", "th", "thead", "title", "tr", "tt", "u", "var",
+        "canvas", "main", "figure", "plaintext", "figcaption", "hgroup", "details", "summary"
+    ]
+}
