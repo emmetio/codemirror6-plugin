@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@emmetio/math-expression": "^1.0.4",
-    "emmet": "^2.3.6"
+    "emmet": "^2.4.2"
   },
   "peerDependencies": {
     "@codemirror/autocomplete": "^6.1.0",
