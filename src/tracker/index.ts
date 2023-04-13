@@ -16,7 +16,7 @@ import { contains, getCaret, rangeEmpty, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
 import { type HTMLElementPreview, createPreview } from './AbbreviationPreviewWidget';
 import icon from '../completion-icon.svg';
-import getEmmetConfig, { config, EmmetPreviewConfig, type EmmetConfig } from '../lib/config';
+import getEmmetConfig, { config, type EmmetPreviewConfig, type EmmetConfig } from '../lib/config';
 
 interface EmmetCompletion extends Completion {
     tracker: AbbreviationTrackerValid;

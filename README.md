@@ -75,6 +75,47 @@ To expand tracked abbreviation, hit <kbd>Tab</kbd> key while caret is inside abb
 
 In case if abbreviation tracking is unavailable or you want to give user an opportunity to enter and expand abbreviation with interactive preview, a special _abbreviation mode_ is available. Run `enterAbbreviationMode` command to enter this mode: everything user types will be tracked as abbreviation with preview and validation. To expand tracked abbreviation, hit <kbd>Tab</kbd> key while caret is inside abbreviation, or hit <kbd>Esc</kbd> key to reset tracker.
 
+### Notes on document syntax
+
+Currently, CodeMirror API doesn’t provide viable option to get document syntax to allow plugins to understand how to work with document. So you have to specify document syntax manually in Emmet plugin. You can do so via `emmetConfig` facet or as an option to `abbreviationTracker`:
+
+```js
+import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
+import { html } from '@codemirror/lang-html';
+import { keymap } from '@codemirror/view';
+
+import { emmetConfig, abbreviationTracker } from '@emmetio/codemirror6-plugin';
+
+const editor1 = new EditorView({
+    state: EditorState.create({
+        extensions: [
+            basicSetup,
+            html(),
+            // Option 1: specify document syntax as config facet
+            emmetConfig.of({
+                syntax: 'css'
+            }),
+            // Option 2: pass syntax as config value of abbreviation tracker
+            abbreviationTracker({
+                syntax: 'jsx'
+            })
+            ...
+        ]
+    }),
+    parent: document.body
+});
+```
+
+Note that syntax is most important option Emmet: it controls how abbreviation is parsed in document (wether it’s markup, stylesheet or JSX syntax) and style of generated output (HTML or XML style, CSS or SASS dialect and so on).
+
+Some common syntaxes:
+* `html`, `xml`: HTML or XML document; in `html` also tries to detect inline CSS fragments.
+* `jsx` for JSX syntax. By default, requires abbreviation to start with `<` in order to skip false-positive abbreviation capturing for variables and functions, also modifies output to match JSX specs (e.g. rename `class` attribute to `className` etc.)
+* `css`, `scss`, `sass`, `stylus`: various options of stylesheet abbreviations and output.
+* `haml`, `jade`, `pug`, `slim`: supported markup preprocessors.
+
+Default syntax is `html`.
+
 ## Available commands
 
 The following commands are available in current package:

@@ -3,12 +3,13 @@ import { expand, extract, getOptions } from '../lib/emmet';
 import { getSyntaxType } from '../lib/syntax';
 import { snippet } from '@codemirror/autocomplete';
 import { getActivationContext } from '../tracker';
+import type { EmmetKnownSyntax } from '../lib/types';
 
 export const expandAbbreviation: StateCommand = ({ state, dispatch }) => {
     const sel = state.selection.main;
     const line = state.doc.lineAt(sel.anchor);
     const options = getOptions(state, sel.anchor);
-    const abbr = extract(line.text, sel.anchor - line.from, getSyntaxType(options.syntax));
+    const abbr = extract(line.text, sel.anchor - line.from, getSyntaxType(options.syntax as EmmetKnownSyntax));
 
     if (abbr) {
         const start = line.from + abbr.start;

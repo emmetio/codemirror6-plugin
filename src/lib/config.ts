@@ -1,6 +1,7 @@
 import type { GlobalConfig } from 'emmet';
-import { EditorState, Extension, Facet } from '@codemirror/state';
+import { EditorState, type Extension, Facet } from '@codemirror/state';
 import { resetCache } from './emmet';
+import type { EmmetKnownSyntax } from './types';
 
 export interface EmmetEditorOptions {
     emmet: EmmetConfig;
@@ -17,6 +18,13 @@ export interface EmmetPreviewConfig {
 }
 
 export interface EmmetConfig {
+    /**
+     * A syntax of expanded abbreviations. In most cases, it must be the same syntax
+     * as in your editor. Currently, CodeMirror doesn’t provide API to get syntax
+     * name from host editor so you have to specify it manually.
+     */
+    syntax: EmmetKnownSyntax;
+
     /** Enables abbreviation marking in editor. Works in known syntaxes only */
     mark: EnableForSyntax;
 
@@ -96,6 +104,7 @@ export interface EmmetConfig {
 }
 
 export const defaultConfig: EmmetConfig = {
+    syntax: 'html',
     mark: true,
     preview: { },
     previewEnabled: true,

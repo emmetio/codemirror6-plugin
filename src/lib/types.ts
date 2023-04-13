@@ -1,6 +1,10 @@
 import type { AbbreviationContext, UserConfig } from 'emmet';
 import type { EditorState, Transaction } from '@codemirror/state';
 
+export type EmmetKnownSyntax = 'html' | 'xml' | 'xsl' | 'jsx' | 'tsx' | 'vue'
+    | 'haml' | 'jade' | 'pug' | 'slim'
+    | 'css' | 'scss' | 'less' | 'sass' | 'sss' | 'stylus' | 'postcss';
+
 export type CSSTokenType = 'selector' | 'propertyName' | 'propertyValue';
 
 export interface RangeObject {

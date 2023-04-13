@@ -1,19 +1,18 @@
 import type { SyntaxType, AbbreviationContext } from 'emmet';
 import type { EditorState } from '@codemirror/state';
-import { language, syntaxTree } from '@codemirror/language';
-import { cssLanguage } from '@codemirror/lang-css';
-import { htmlLanguage } from '@codemirror/lang-html';
+import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
 import { getContext } from './context';
-import type { HTMLContext, CSSContext } from './types';
+import type { HTMLContext, CSSContext, EmmetKnownSyntax } from './types';
 import { last, getTagAttributes } from './utils';
+import getEmmetConfig from './config';
 
-const xmlSyntaxes = ['xml', 'xsl', 'jsx'];
-const htmlSyntaxes = ['html', 'htmlmixed', 'vue'];
-const cssSyntaxes = ['css', 'scss', 'less'];
-const jsxSyntaxes = ['jsx', 'tsx'];
-const markupSyntaxes = ['haml', 'jade', 'pug', 'slim'].concat(htmlSyntaxes, xmlSyntaxes, jsxSyntaxes);
-const stylesheetSyntaxes = ['sass', 'sss', 'stylus', 'postcss'].concat(cssSyntaxes);
+const htmlSyntaxes: EmmetKnownSyntax[] = ['html', 'vue'];
+const jsxSyntaxes: EmmetKnownSyntax[] = ['jsx', 'tsx'];
+const xmlSyntaxes: EmmetKnownSyntax[] = ['xml', 'xsl', ...jsxSyntaxes];
+const cssSyntaxes: EmmetKnownSyntax[] = ['css', 'scss', 'less'];
+const markupSyntaxes: EmmetKnownSyntax[] = ['haml', 'jade', 'pug', 'slim', ...htmlSyntaxes, ...xmlSyntaxes, ...jsxSyntaxes];
+const stylesheetSyntaxes: EmmetKnownSyntax[] = ['sass', 'sss', 'stylus', 'postcss', ...cssSyntaxes];
 
 export interface SyntaxInfo {
     type: SyntaxType;
@@ -83,63 +82,52 @@ export function syntaxInfo(state: EditorState, ctx?: number | HTMLContext | CSSC
 /**
  * Returns main editor syntax
  */
-export function docSyntax(state: EditorState): string {
-    const topLang = state.facet(language);
-    if (topLang === cssLanguage) {
-        return 'css';
-    }
-
-    if (topLang === htmlLanguage) {
-        return 'html';
-    }
-    return '';
+export function docSyntax(state: EditorState): EmmetKnownSyntax {
+    return getEmmetConfig(state).syntax;
 }
 
 /**
  * Returns Emmet abbreviation type for given syntax
  */
-export function getSyntaxType(syntax?: string): SyntaxType {
+export function getSyntaxType(syntax?: EmmetKnownSyntax): SyntaxType {
     return syntax && stylesheetSyntaxes.includes(syntax) ? 'stylesheet' : 'markup';
 }
 
 /**
  * Check if given syntax is XML dialect
  */
-export function isXML(syntax?: string): boolean {
-    return syntax ? xmlSyntaxes.includes(syntax) : false;
+export function isXML(syntax: string): syntax is EmmetKnownSyntax {
+    return xmlSyntaxes.includes(syntax as EmmetKnownSyntax);
 }
 
 /**
  * Check if given syntax is HTML dialect (including XML)
  */
-export function isHTML(syntax?: string): boolean {
-    return syntax
-        ? htmlSyntaxes.includes(syntax) || isXML(syntax)
-        : false;
+export function isHTML(syntax: string): syntax is EmmetKnownSyntax {
+    return htmlSyntaxes.includes(syntax as EmmetKnownSyntax) || isXML(syntax);
 }
 
 /**
  * Check if given syntax name is supported by Emmet
  */
-export function isSupported(syntax: string): boolean {
-    return syntax
-        ? markupSyntaxes.includes(syntax) || stylesheetSyntaxes.includes(syntax)
-        : false;
+export function isSupported(syntax: string): syntax is EmmetKnownSyntax {
+    return markupSyntaxes.includes(syntax as EmmetKnownSyntax)
+        || stylesheetSyntaxes.includes(syntax as EmmetKnownSyntax);
 }
 
 /**
  * Check if given syntax is a CSS dialect. Note that it’s not the same as stylesheet
  * syntax: for example, SASS is a stylesheet but not CSS dialect (but SCSS is)
  */
-export function isCSS(syntax?: string): boolean {
-    return syntax ? cssSyntaxes.includes(syntax) : false;
+export function isCSS(syntax: string): syntax is EmmetKnownSyntax {
+    return cssSyntaxes.includes(syntax as EmmetKnownSyntax);
 }
 
 /**
  * Check if given syntax is JSX dialect
  */
-export function isJSX(syntax?: string): boolean {
-    return syntax ? jsxSyntaxes.includes(syntax) : false;
+export function isJSX(syntax: string): syntax is EmmetKnownSyntax {
+    return jsxSyntaxes.includes(syntax as EmmetKnownSyntax);
 }
 
 /**
