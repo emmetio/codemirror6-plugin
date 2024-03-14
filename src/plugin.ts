@@ -1,4 +1,4 @@
-export { default as abbreviationTracker } from './tracker';
+export { default as abbreviationTracker } from "./tracker";
 
 /*
 Emmet commands that should be used as standard CodeMirror commands.
@@ -25,21 +25,27 @@ new EditorView({
 })
 ```
 */
-export { enterAbbreviationMode, emmetCompletionSource } from './tracker';
-export { config as emmetConfig, type EmmetConfig } from './lib/config';
-export type { EmmetKnownSyntax } from './lib/types';
-export { expandAbbreviation } from './commands/expand';
-export { balanceOutward, balanceInward } from './commands/balance';
-export { toggleComment } from './commands/comment';
-export { evaluateMath } from './commands/evaluate-math';
-export { goToNextEditPoint, goToPreviousEditPoint } from './commands/go-to-edit-point';
-export { goToTagPair } from './commands/go-to-tag-pair';
+export { enterAbbreviationMode, emmetCompletionSource } from "./tracker";
+export { config as emmetConfig, type EmmetConfig } from "./lib/config";
+export { EmmetKnownSyntax } from "./lib/types";
+export { expandAbbreviation } from "./commands/expand";
+export { balanceOutward, balanceInward } from "./commands/balance";
+export { toggleComment } from "./commands/comment";
+export { evaluateMath } from "./commands/evaluate-math";
 export {
-    incrementNumber1, decrementNumber1,
-    incrementNumber01, decrementNumber01,
-    incrementNumber10, decrementNumber10
-} from './commands/inc-dec-number';
-export { removeTag } from './commands/remove-tag';
-export { selectNextItem, selectPreviousItem } from './commands/select-item';
-export { splitJoinTag } from './commands/split-join-tag';
-export { wrapWithAbbreviation } from './commands/wrap-with-abbreviation';
+  goToNextEditPoint,
+  goToPreviousEditPoint,
+} from "./commands/go-to-edit-point";
+export { goToTagPair } from "./commands/go-to-tag-pair";
+export {
+  incrementNumber1,
+  decrementNumber1,
+  incrementNumber01,
+  decrementNumber01,
+  incrementNumber10,
+  decrementNumber10,
+} from "./commands/inc-dec-number";
+export { removeTag } from "./commands/remove-tag";
+export { selectNextItem, selectPreviousItem } from "./commands/select-item";
+export { splitJoinTag } from "./commands/split-join-tag";
+export { wrapWithAbbreviation } from "./commands/wrap-with-abbreviation";

@@ -1,90 +1,106 @@
-import type { AbbreviationContext, UserConfig } from 'emmet';
-import type { EditorState, Transaction } from '@codemirror/state';
+import type { AbbreviationContext, UserConfig } from "emmet";
+import type { EditorState, Transaction } from "@codemirror/state";
 
-export type EmmetKnownSyntax = 'html' | 'xml' | 'xsl' | 'jsx' | 'tsx' | 'vue'
-    | 'haml' | 'jade' | 'pug' | 'slim'
-    | 'css' | 'scss' | 'less' | 'sass' | 'sss' | 'stylus' | 'postcss';
+export enum EmmetKnownSyntax {
+  html = "html",
+  xml = "xml",
+  xsl = "xsl",
+  jsx = "jsx",
+  tsx = "tsx",
+  vue = "vue",
+  haml = "haml",
+  jade = "jade",
+  pug = "pug",
+  slim = "slim",
+  css = "css",
+  scss = "scss",
+  less = "less",
+  sass = "sass",
+  sss = "sss",
+  stylus = "stylus",
+  postcss = "postcss",
+}
 
-export type CSSTokenType = 'selector' | 'propertyName' | 'propertyValue';
+export type CSSTokenType = "selector" | "propertyName" | "propertyValue";
 
 export interface RangeObject {
-    from: number;
-    to: number;
+  from: number;
+  to: number;
 }
 
 export interface ContextTag extends AbbreviationContext {
-    open: RangeObject;
-    close?: RangeObject;
+  open: RangeObject;
+  close?: RangeObject;
 }
 
 export interface CSSMatch {
-    /** CSS selector, property or section name */
-    name: string;
-    /** Type of ancestor element */
-    type: CSSTokenType;
-    /** Range of selector or section (just name, not entire block) */
-    range: RangeObject;
+  /** CSS selector, property or section name */
+  name: string;
+  /** Type of ancestor element */
+  type: CSSTokenType;
+  /** Range of selector or section (just name, not entire block) */
+  range: RangeObject;
 }
 
 export interface CSSContext<M = CSSMatch> {
-    type: 'css',
+  type: "css";
 
-    /** List of ancestor sections for current context */
-    ancestors: M[];
+  /** List of ancestor sections for current context */
+  ancestors: M[];
 
-    /** CSS match directly under given position */
-    current: M | null;
+  /** CSS match directly under given position */
+  current: M | null;
 
-    /** Whether CSS context is inline, e.g. in `style=""` HTML attribute */
-    inline: boolean;
+  /** Whether CSS context is inline, e.g. in `style=""` HTML attribute */
+  inline: boolean;
 
-    /**
-     * If current CSS context is embedded into HTML, this property contains
-     * range of CSS source in original content
-     */
-    embedded?: RangeObject;
+  /**
+   * If current CSS context is embedded into HTML, this property contains
+   * range of CSS source in original content
+   */
+  embedded?: RangeObject;
 }
 
-export type HTMLType = 'open' | 'close' | 'selfClose';
+export type HTMLType = "open" | "close" | "selfClose";
 
 export interface HTMLContext {
-    type: 'html',
-    /** List of ancestor elements for current context */
-    ancestors: HTMLAncestor[];
-    /** Tag match directly under given position */
-    current: HTMLMatch | null;
-    /** CSS context, if any */
-    css?: CSSContext;
+  type: "html";
+  /** List of ancestor elements for current context */
+  ancestors: HTMLAncestor[];
+  /** Tag match directly under given position */
+  current: HTMLMatch | null;
+  /** CSS context, if any */
+  css?: CSSContext;
 }
 
 export interface HTMLAncestor {
-    /** Element name */
-    name: string;
-    /** Range of element’s open tag in source code */
-    range: RangeObject;
+  /** Element name */
+  name: string;
+  /** Range of element’s open tag in source code */
+  range: RangeObject;
 }
 
 export interface HTMLMatch {
-    /** Element name */
-    name: string;
-    /** Element type */
-    type: HTMLType;
-    /** Range of matched element in source code */
-    range: RangeObject;
+  /** Element name */
+  name: string;
+  /** Element type */
+  type: HTMLType;
+  /** Range of matched element in source code */
+  range: RangeObject;
 }
 
 export interface StateCommandTarget {
-    state: EditorState;
-    dispatch: (transaction: Transaction) => void;
+  state: EditorState;
+  dispatch: (transaction: Transaction) => void;
 }
 
 export interface AbbreviationError {
-    message: string;
-    pos: number;
+  message: string;
+  pos: number;
 }
 
 export interface StartTrackingParams {
-    config: UserConfig;
-    offset?: number;
-    forced?: boolean;
+  config: UserConfig;
+  offset?: number;
+  forced?: boolean;
 }
