@@ -3,16 +3,16 @@ import type { EditorState } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
 import { getContext } from './context';
-import type { HTMLContext, CSSContext, EmmetKnownSyntax } from './types';
+import { HTMLContext, CSSContext, EmmetKnownSyntax } from './types';
 import { last, getTagAttributes } from './utils';
 import getEmmetConfig from './config';
 
-const htmlSyntaxes: EmmetKnownSyntax[] = ['html', 'vue'];
-const jsxSyntaxes: EmmetKnownSyntax[] = ['jsx', 'tsx'];
-const xmlSyntaxes: EmmetKnownSyntax[] = ['xml', 'xsl', ...jsxSyntaxes];
-const cssSyntaxes: EmmetKnownSyntax[] = ['css', 'scss', 'less'];
-const markupSyntaxes: EmmetKnownSyntax[] = ['haml', 'jade', 'pug', 'slim', ...htmlSyntaxes, ...xmlSyntaxes, ...jsxSyntaxes];
-const stylesheetSyntaxes: EmmetKnownSyntax[] = ['sass', 'sss', 'stylus', 'postcss', ...cssSyntaxes];
+const htmlSyntaxes: EmmetKnownSyntax[] = [EmmetKnownSyntax.html, EmmetKnownSyntax.vue];
+const jsxSyntaxes: EmmetKnownSyntax[] = [EmmetKnownSyntax.jsx, EmmetKnownSyntax.tsx];
+const xmlSyntaxes: EmmetKnownSyntax[] = [EmmetKnownSyntax.xml, EmmetKnownSyntax.xsl, ...jsxSyntaxes];
+const cssSyntaxes: EmmetKnownSyntax[] = [EmmetKnownSyntax.css, EmmetKnownSyntax.scss, EmmetKnownSyntax.less];
+const markupSyntaxes: EmmetKnownSyntax[] = [EmmetKnownSyntax.haml, EmmetKnownSyntax.jade, EmmetKnownSyntax.pug, EmmetKnownSyntax.slim, ...htmlSyntaxes, ...xmlSyntaxes, ...jsxSyntaxes];
+const stylesheetSyntaxes: EmmetKnownSyntax[] = [EmmetKnownSyntax.sass, EmmetKnownSyntax.sss, EmmetKnownSyntax.stylus, EmmetKnownSyntax.postcss, ...cssSyntaxes];
 
 export interface SyntaxInfo {
     type: SyntaxType;
@@ -65,10 +65,10 @@ export function syntaxInfo(state: EditorState, ctx?: number | HTMLContext | CSSC
 
     if (context?.type === 'html' && context.css) {
         inline = true;
-        syntax = 'css';
+        syntax = EmmetKnownSyntax.css;
         context = context.css;
     } else if (context?.type === 'css') {
-        syntax = 'css';
+        syntax = EmmetKnownSyntax.css;
     }
 
     return {

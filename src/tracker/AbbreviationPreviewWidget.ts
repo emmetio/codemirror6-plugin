@@ -4,6 +4,7 @@ import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import type { EmmetPreviewConfig, PreviewExtensions } from '../lib/config';
+import { EmmetKnownSyntax } from '../plugin';
 
 export interface HTMLElementPreview extends HTMLElement {
     update?: (value: string) => void;
@@ -16,7 +17,7 @@ export function createPreview(value: string, syntax: string, options?: EmmetPrev
         elem.classList.add('emmet-preview_error');
     }
 
-    let ext: PreviewExtensions = syntax === 'css' ? css : html;
+    let ext: PreviewExtensions = syntax === EmmetKnownSyntax.css ? css : html;
     if (options && syntax in options) {
         ext = options[syntax as keyof EmmetPreviewConfig]!;
     }
@@ -26,7 +27,7 @@ export function createPreview(value: string, syntax: string, options?: EmmetPrev
         extensions: [
             EditorState.readOnly.of(true),
             syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-            syntax === 'css' ? css() : html(),
+            syntax === EmmetKnownSyntax.css ? css() : html(),
             ext()
         ],
         parent: elem

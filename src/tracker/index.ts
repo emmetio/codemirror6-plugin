@@ -11,7 +11,7 @@ import type { CompletionSource } from '@codemirror/autocomplete';
 import { getCSSContext, getHTMLContext } from '../lib/context';
 import { docSyntax, getMarkupAbbreviationContext, getStylesheetAbbreviationContext, getSyntaxType, isCSS, isHTML, isJSX, isSupported } from '../lib/syntax';
 import getOutputOptions from '../lib/output';
-import type { CSSContext, AbbreviationError, StartTrackingParams, RangeObject } from '../lib/types';
+import { type CSSContext, type AbbreviationError, type StartTrackingParams, type RangeObject, EmmetKnownSyntax } from '../lib/types';
 import { contains, getCaret, rangeEmpty, substr } from '../lib/utils';
 import { expand } from '../lib/emmet';
 import { type HTMLElementPreview, createPreview } from './AbbreviationPreviewWidget';
@@ -202,7 +202,7 @@ function getAbbreviationPreview(state: EditorState, prevTooltip?: EmmetTooltip |
                         syntax = 'error';
                     } else {
                         preview = tracker.preview;
-                        syntax = tracker.config.syntax || 'html';
+                        syntax = tracker.config.syntax || EmmetKnownSyntax.html;
                     }
 
                     const dom = createPreview(preview, syntax, previewConfig);
@@ -372,14 +372,14 @@ function typingAbbreviation(state: EditorState, pos: number, input: string): Abb
         return null;
     }
 
-    if (config.type === 'stylesheet' && !canStartTyping(prefix, input, 'css')) {
+    if (config.type === 'stylesheet' && !canStartTyping(prefix, input, EmmetKnownSyntax.css)) {
         // Additional check for stylesheet abbreviation start: it’s slightly
         // differs from markup prefix, but we need activation context
         // to ensure that context under caret is CSS
         return null;
     }
 
-    const syntax = config.syntax || 'html';
+    const syntax = config.syntax || EmmetKnownSyntax.html;
     let from = pos;
     let to = pos + input.length;
     let offset = 0;
@@ -405,7 +405,7 @@ function typingAbbreviation(state: EditorState, pos: number, input: string): Abb
  */
 export function getActivationContext(state: EditorState, pos: number): UserConfig | undefined {
     if (cssLanguage.isActiveAt(state, pos)) {
-        return getCSSActivationContext(state, pos, 'css', getCSSContext(state, pos));
+        return getCSSActivationContext(state, pos, EmmetKnownSyntax.css, getCSSContext(state, pos));
     }
 
     const syntax = docSyntax(state);
@@ -414,7 +414,7 @@ export function getActivationContext(state: EditorState, pos: number): UserConfi
         const ctx = getHTMLContext(state, pos);
 
         if (ctx.css) {
-            return getCSSActivationContext(state, pos, 'css', ctx.css);
+            return getCSSActivationContext(state, pos, EmmetKnownSyntax.css, ctx.css);
         }
 
         if (!ctx.current) {
@@ -436,7 +436,7 @@ export function getActivationContext(state: EditorState, pos: number): UserConfi
     return undefined;
 }
 
-function getCSSActivationContext(state: EditorState, pos: number, syntax: string, ctx: CSSContext): UserConfig | undefined {
+function getCSSActivationContext(state: EditorState, pos: number, syntax: EmmetKnownSyntax, ctx: CSSContext): UserConfig | undefined {
     const allowedContext = !ctx.current
         || ctx.current.type === 'propertyName'
         || ctx.current.type === 'propertyValue'
@@ -655,17 +655,17 @@ function handleUpdate(state: EditorState, tracker: AbbreviationTracker | null, u
 
 function getSyntaxFromPos(state: EditorState, pos: number): string {
     if (cssLanguage.isActiveAt(state, pos)) {
-        return 'css';
+        return EmmetKnownSyntax.css;
     }
 
     if (htmlLanguage.isActiveAt(state, pos)) {
-        return 'html';
+        return EmmetKnownSyntax.html;
     }
 
     return '';
 }
 
-function canStartTyping(prefix: string, input: string, syntax: string) {
+function canStartTyping(prefix: string, input: string, syntax: EmmetKnownSyntax) {
     return isValidPrefix(prefix, syntax) && isValidAbbreviationStart(input, syntax);
 }
 
@@ -725,7 +725,7 @@ function completionInfo(completion: Completion): Node {
     if (preview?.update) {
         preview.update(tracker.preview);
     } else {
-        (completion as EmmetCompletion).preview = preview = createPreview(tracker.preview, tracker.config.syntax || 'html', previewConfig);
+        (completion as EmmetCompletion).preview = preview = createPreview(tracker.preview, tracker.config.syntax || EmmetKnownSyntax.html, previewConfig);
     }
 
     return preview;

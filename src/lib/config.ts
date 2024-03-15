@@ -1,7 +1,7 @@
 import type { GlobalConfig } from 'emmet';
 import { EditorState, type Extension, Facet } from '@codemirror/state';
 import { resetCache } from './emmet';
-import type { EmmetKnownSyntax } from './types';
+import { EmmetKnownSyntax } from './types';
 
 export interface EmmetEditorOptions {
     emmet: EmmetConfig;
@@ -104,7 +104,7 @@ export interface EmmetConfig {
 }
 
 export const defaultConfig: EmmetConfig = {
-    syntax: 'html',
+    syntax: EmmetKnownSyntax.html,
     mark: true,
     preview: { },
     previewEnabled: true,
