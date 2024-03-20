@@ -7,7 +7,7 @@ import { syntaxInfo, getMarkupAbbreviationContext, getStylesheetAbbreviationCont
 import { getTagAttributes, substr } from './utils';
 import getEmmetConfig from './config';
 import getOutputOptions, { field } from './output';
-import type { ContextTag } from './types';
+import { EmmetKnownSyntax, type ContextTag } from './types';
 
 export interface ExtractedAbbreviationWithContext extends ExtractedAbbreviation {
     context?: AbbreviationContext;
@@ -120,7 +120,7 @@ export function getOptions(state: EditorState, pos: number): UserConfig {
 
     const config: UserConfig = {
         type: info.type,
-        syntax: info.syntax || 'html',
+        syntax: info.syntax || EmmetKnownSyntax.html,
         options: getOutputOptions(state, info.inline)
     };
 

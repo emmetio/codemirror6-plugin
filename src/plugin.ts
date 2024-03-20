@@ -27,7 +27,7 @@ new EditorView({
 */
 export { enterAbbreviationMode, emmetCompletionSource } from './tracker';
 export { config as emmetConfig, type EmmetConfig } from './lib/config';
-export type { EmmetKnownSyntax } from './lib/types';
+export { EmmetKnownSyntax } from './lib/types';
 export { expandAbbreviation } from './commands/expand';
 export { balanceOutward, balanceInward } from './commands/balance';
 export { toggleComment } from './commands/comment';

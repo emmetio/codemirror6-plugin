@@ -2,9 +2,10 @@ import type { Options } from 'emmet';
 import type { EditorState, Line } from '@codemirror/state';
 import getEmmetConfig from './config';
 import { isHTML, docSyntax } from './syntax';
+import { EmmetKnownSyntax } from './types';
 
 export default function getOutputOptions(state: EditorState, inline?: boolean): Partial<Options> {
-    const syntax = docSyntax(state) || 'html';
+    const syntax = docSyntax(state) || EmmetKnownSyntax.html;
     const config = getEmmetConfig(state);
 
     const opt: Partial<Options> = {
@@ -17,7 +18,7 @@ export default function getOutputOptions(state: EditorState, inline?: boolean): 
         'stylesheet.shortHex': config.shortHex
     };
 
-    if (syntax === 'html') {
+    if (syntax === EmmetKnownSyntax.html) {
         opt['output.selfClosingStyle'] = config.markupStyle;
         opt['output.compactBoolean'] = config.markupStyle === 'html';
     }

@@ -1,9 +1,25 @@
 import type { AbbreviationContext, UserConfig } from 'emmet';
 import type { EditorState, Transaction } from '@codemirror/state';
 
-export type EmmetKnownSyntax = 'html' | 'xml' | 'xsl' | 'jsx' | 'tsx' | 'vue'
-    | 'haml' | 'jade' | 'pug' | 'slim'
-    | 'css' | 'scss' | 'less' | 'sass' | 'sss' | 'stylus' | 'postcss';
+export enum EmmetKnownSyntax {
+  html = 'html',
+  xml = 'xml',
+  xsl = 'xsl',
+  jsx = 'jsx',
+  tsx = 'tsx',
+  vue = 'vue',
+  haml = 'haml',
+  jade = 'jade',
+  pug = 'pug',
+  slim = 'slim',
+  css = 'css',
+  scss = 'scss',
+  less = 'less',
+  sass = 'sass',
+  sss = 'sss',
+  stylus = 'stylus',
+  postcss = 'postcss'
+}
 
 export type CSSTokenType = 'selector' | 'propertyName' | 'propertyValue';
 
