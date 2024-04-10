@@ -653,7 +653,7 @@ function handleUpdate(state: EditorState, tracker: AbbreviationTracker | null, u
     return tracker;
 }
 
-function getSyntaxFromPos(state: EditorState, pos: number): string {
+function getSyntaxFromPos(state: EditorState, pos: number): EmmetKnownSyntax {
     if (cssLanguage.isActiveAt(state, pos)) {
         return EmmetKnownSyntax.css;
     }
@@ -662,7 +662,7 @@ function getSyntaxFromPos(state: EditorState, pos: number): string {
         return EmmetKnownSyntax.html;
     }
 
-    return '';
+    return '' as EmmetKnownSyntax;
 }
 
 function canStartTyping(prefix: string, input: string, syntax: EmmetKnownSyntax) {
