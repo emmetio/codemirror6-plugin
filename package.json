@@ -11,24 +11,22 @@
     "prepare": "npm run build"
   },
   "devDependencies": {
+    "@lezer/common": "^1.2.1",
     "codemirror": "^6.0.1",
-    "typescript": "^4.7.4",
-    "vite": "^3.0.4"
+    "typescript": "^5.5.4",
+    "vite": "^5.3.5"
   },
   "dependencies": {
     "@emmetio/math-expression": "^1.0.5",
     "emmet": "^2.4.7"
   },
   "peerDependencies": {
-    "@codemirror/autocomplete": "^6.1.0",
-    "@codemirror/commands": "^6.0.1",
-    "@codemirror/highlight": "^0.19.8",
-    "@codemirror/history": "^0.19.2",
-    "@codemirror/lang-css": "^6.0.0",
-    "@codemirror/lang-html": "^6.1.0",
-    "@codemirror/language": "^6.2.1",
-    "@codemirror/state": "^6.1.1",
-    "@codemirror/view": "^6.2.0",
-    "@lezer/common": "^1.0.0"
+    "@codemirror/autocomplete": "^6.17.0",
+    "@codemirror/commands": "^6.6.0",
+    "@codemirror/lang-css": "^6.2.1",
+    "@codemirror/lang-html": "^6.4.9",
+    "@codemirror/language": "^6.10.2",
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/view": "^6.29.1"
   }
 }

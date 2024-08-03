@@ -13,11 +13,10 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "isolatedModules": true,
-    "importsNotUsedAsValues": "error",
     "skipLibCheck": true,
     "declaration": true,
     "emitDeclarationOnly": true,
     "outDir": "./dist"
   },
-  "include": ["./src/**/*.ts"]
+  "include": ["./src"]
 }
