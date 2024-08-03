@@ -15,6 +15,9 @@ export interface EmmetPreviewConfig {
     html?: PreviewExtensions;
     /** Extensions factory for displaying CSS-like abbreviation preview  */
     css?: PreviewExtensions;
+
+    /** Value for `root` options of EditorView: https://codemirror.net/docs/ref/#view.EditorViewConfig.root */
+    root?: Document | ShadowRoot;
 }
 
 export interface EmmetConfig {

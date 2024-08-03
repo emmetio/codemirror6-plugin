@@ -19,11 +19,12 @@ export function createPreview(value: string, syntax: string, options?: EmmetPrev
 
     let ext: PreviewExtensions = syntax === EmmetKnownSyntax.css ? css : html;
     if (options && syntax in options) {
-        ext = options[syntax as keyof EmmetPreviewConfig]!;
+        ext = options[syntax as keyof EmmetPreviewConfig] as PreviewExtensions;
     }
 
     const view = new EditorView({
         doc: value,
+        root: options?.root,
         extensions: [
             EditorState.readOnly.of(true),
             syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
