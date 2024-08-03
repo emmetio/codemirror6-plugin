@@ -1,13 +1,13 @@
 import type { MarkupAbbreviation, StylesheetAbbreviation, UserConfig } from 'emmet';
 import { markupAbbreviation } from 'emmet';
-import { ViewPlugin, Decoration, keymap, EditorView, type Tooltip, showTooltip } from '@codemirror/view';
-import type { DecorationSet, Command, ViewUpdate } from '@codemirror/view';
+import { ViewPlugin, Decoration, keymap, EditorView, showTooltip } from '@codemirror/view';
+import type { DecorationSet, Command, Tooltip, ViewUpdate } from '@codemirror/view';
 import { StateEffect, StateField } from '@codemirror/state';
 import type { Range, EditorState, Extension, StateCommand, Transaction } from '@codemirror/state';
 import { htmlLanguage } from '@codemirror/lang-html';
 import { cssLanguage } from '@codemirror/lang-css';
-import { snippet, pickedCompletion, completionStatus, type CompletionResult, type Completion } from '@codemirror/autocomplete';
-import type { CompletionSource } from '@codemirror/autocomplete';
+import { snippet, pickedCompletion, completionStatus } from '@codemirror/autocomplete';
+import type { CompletionResult, Completion, CompletionSource } from '@codemirror/autocomplete';
 import { getCSSContext, getHTMLContext } from '../lib/context';
 import { docSyntax, getMarkupAbbreviationContext, getStylesheetAbbreviationContext, getSyntaxType, isCSS, isHTML, isJSX, isSupported } from '../lib/syntax';
 import getOutputOptions from '../lib/output';
@@ -372,11 +372,20 @@ function typingAbbreviation(state: EditorState, pos: number, input: string): Abb
         return null;
     }
 
-    if (config.type === 'stylesheet' && !canStartTyping(prefix, input, EmmetKnownSyntax.css)) {
-        // Additional check for stylesheet abbreviation start: it’s slightly
-        // differs from markup prefix, but we need activation context
-        // to ensure that context under caret is CSS
-        return null;
+    // Additional check for stylesheet abbreviation start: it’s slightly
+    // differs from markup prefix, but we need activation context
+    // to ensure that context under caret is CSS
+    if (config.type === 'stylesheet') {
+        if (!canStartTyping(prefix, input, EmmetKnownSyntax.css)) {
+            return null;
+        }
+
+        // Do not trigger abbreviation tracking inside CSS property value.
+        // Allow it for colors only
+        const ctxName = config.context?.name;
+        if (ctxName && !ctxName.startsWith('@@') && input !== '#') {
+            return null;
+        }
     }
 
     const syntax = config.syntax || EmmetKnownSyntax.html;
