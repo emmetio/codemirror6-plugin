@@ -39,14 +39,14 @@ type AbbreviationTracker = AbbreviationTrackerValid | AbbreviationTrackerError;
 // Нужно найти способ обновить трэкер раньше, чем отработает код автокомплита
 export const emmetCompletionSource: CompletionSource = context => {
     const tracker = context.state.field(trackerField);
-    if (tracker?.type === 'abbreviation' && tracker.preview) {
+    if (tracker?.type === 'abbreviation' && tracker.preview && contains(tracker.range, context.pos)) {
         return {
             from: tracker.range.from,
             to: tracker.range.to,
             filter: false,
             update(current, _from, _to, context) {
                 const tracker = context.state.field(trackerField);
-                if (!tracker || tracker.type === 'error') {
+                if (!tracker || tracker.type === 'error' || !contains(tracker.range, context.pos)) {
                     return null;
                 }
 
