@@ -51,7 +51,12 @@ new EditorView({
                     snippets: {
                         'foo': 'ul.foo>li.bar+li.baz'
                     }
-                }
+                },
+                stylesheet: {
+                    options: {
+                        'stylesheet.strictMatch': true
+                    }
+                },
             }
         })),
         wrapWithAbbreviation(),
