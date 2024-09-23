@@ -46,6 +46,7 @@ new EditorView({
         basicSetup,
         html(),
         Prec.high(abbreviationTracker({
+            autocompleteTab: ['stylesheet'],
             config: {
                 markup: {
                     snippets: {

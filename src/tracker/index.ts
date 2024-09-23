@@ -6,7 +6,7 @@ import { StateEffect, StateField } from '@codemirror/state';
 import type { Range, EditorState, Extension, StateCommand, Transaction } from '@codemirror/state';
 import { htmlLanguage } from '@codemirror/lang-html';
 import { cssLanguage } from '@codemirror/lang-css';
-import { snippet, pickedCompletion, completionStatus } from '@codemirror/autocomplete';
+import { snippet, pickedCompletion, completionStatus, selectedCompletion, acceptCompletion } from '@codemirror/autocomplete';
 import type { CompletionResult, Completion, CompletionSource } from '@codemirror/autocomplete';
 import { getCSSContext, getHTMLContext } from '../lib/context';
 import { docSyntax, getMarkupAbbreviationContext, getStylesheetAbbreviationContext, getSyntaxType, isCSS, isHTML, isJSX, isSupported } from '../lib/syntax';
@@ -267,12 +267,33 @@ export function expandTracker(view: EditorView, tracker: AbbreviationTracker): v
 
 const tabKeyHandler: Command = (view) => {
     const { state } = view;
-    if (completionStatus(state)) {
-        // Must be handled by `acceptCompletion` command
-        return false;
+    const completion = selectedCompletion(state)
+    const tracker = state.field(trackerField, false);
+
+    if (completion && tracker) {
+        // Check if we can use Tab key to apply Emmet completion
+        if (completion.type === 'emmet') {
+            const { autocompleteTab } = getEmmetConfig(state);
+            if (!autocompleteTab) {
+                return false;
+            }
+
+            if (Array.isArray(autocompleteTab)) {
+                const { type, syntax } = tracker.config
+                if (!autocompleteTab.includes(type!) && !autocompleteTab.includes(syntax!)) {
+                    return false;
+                }
+            }
+
+            // Accept completion
+            acceptCompletion(view);
+            return true;
+        } else {
+            // Must be handled by `acceptCompletion` command
+            return false;
+        }
     }
 
-    const tracker = state.field(trackerField, false);
     if (tracker && !tracker.inactive && contains(tracker.range, getCaret(state))) {
         expandTracker(view, tracker);
         return true;

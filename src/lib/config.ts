@@ -56,6 +56,11 @@ export interface EmmetConfig {
     /** Allow automatic tag pair rename, works only if `markTagPairs` is enabled */
     autoRenameTags: boolean;
 
+    /**
+     * Force Tab key to apply Emmet autocomplete option
+     */
+    autocompleteTab?: EnableForSyntax;
+
     /** Quotes to use in generated HTML attribute values */
     attributeQuotes: 'single' | 'double';
 
