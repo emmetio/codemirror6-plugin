@@ -1,8 +1,8 @@
 # Emmet extension for CodeMirror 6 editor
 
-[CodeMirror 6](http://codemirror.net/next/) extension that adds [Emmet](https://emmet.io) support to text editor.
+[CodeMirror 6](http://codemirror.net/) extension that adds [Emmet](https://emmet.io) support to text editor.
 
-> Extension development is sponsored by [Replit](https://replit.com)
+> Extension development is sponsored by [CodePen](https://codepen.io) and [Replit](https://replit.com)
 ---
 
 ## How to use
