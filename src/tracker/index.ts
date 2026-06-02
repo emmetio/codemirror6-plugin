@@ -6,6 +6,7 @@ import { StateEffect, StateField } from '@codemirror/state';
 import type { Range, EditorState, Extension, StateCommand, Transaction } from '@codemirror/state';
 import { htmlLanguage } from '@codemirror/lang-html';
 import { cssLanguage } from '@codemirror/lang-css';
+import { javascriptLanguage } from '@codemirror/lang-javascript';
 import { snippet, pickedCompletion, completionStatus, selectedCompletion, acceptCompletion } from '@codemirror/autocomplete';
 import type { CompletionResult, Completion, CompletionSource } from '@codemirror/autocomplete';
 import { getCSSContext, getHTMLContext } from '../lib/context';
@@ -419,7 +420,7 @@ function typingAbbreviation(state: EditorState, pos: number, input: string): Abb
         from -= offset;
     }
 
-    return createTracker(state, { from, to }, { config });
+    return createTracker(state, { from, to }, { config, offset });
 }
 
 /**
@@ -438,7 +439,9 @@ export function getActivationContext(state: EditorState, pos: number): UserConfi
         return getCSSActivationContext(state, pos, EmmetKnownSyntax.css, getCSSContext(state, pos));
     }
 
-    const syntax = docSyntax(state);
+    const syntax = javascriptLanguage.isActiveAt(state, pos)
+        ? EmmetKnownSyntax.jsx
+        : docSyntax(state);
 
     if (isHTML(syntax)) {
         const ctx = getHTMLContext(state, pos);
@@ -665,7 +668,8 @@ function handleUpdate(state: EditorState, tracker: AbbreviationTracker | null, u
                 const abbrRange = tracker.inactive ? range : { from: range.from, to };
                 const nextTracker = createTracker(state, abbrRange, {
                     config: tracker.config,
-                    forced: tracker.forced
+                    forced: tracker.forced,
+                    offset: tracker.offset
                 });
 
                 if (!nextTracker) {
@@ -690,6 +694,10 @@ function getSyntaxFromPos(state: EditorState, pos: number): EmmetKnownSyntax {
 
     if (htmlLanguage.isActiveAt(state, pos)) {
         return EmmetKnownSyntax.html;
+    }
+
+    if (javascriptLanguage.isActiveAt(state, pos)) {
+        return EmmetKnownSyntax.jsx;
     }
 
     return '' as EmmetKnownSyntax;
