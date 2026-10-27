@@ -133,3 +133,7 @@ The following commands are available in current package:
 * `splitJoinTag` — [Split/Join Tag](https://docs.emmet.io/actions/split-join-tag/)
 * `selectNextItem`/`selectPreviousItem` — [Select Item](https://docs.emmet.io/actions/select-item/)
 
+
+## License
+
+[MIT](LICENSE)
